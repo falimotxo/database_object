@@ -29,8 +29,8 @@ class DatabaseObjectModule(object):
         return self._get_data_object_result_from_json('put', ret)
 
     def update(self, schema: str, object_name: str, data) -> DatabaseObjectResult:
-        ret = self.access.put(schema, object_name, data)
-        return self._get_data_object_result_from_json('put', ret)
+        ret = self.access.update(schema, object_name, data.__dict__)
+        return self._get_data_object_result_from_json('update', ret)
 
     def remove(self, schema: str, object_name: str) -> DatabaseObjectResult:
         ret = self.access.remove(schema, object_name)

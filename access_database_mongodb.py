@@ -39,7 +39,14 @@ class AccessDatabaseMongoDB(AccessDatabase):
 
     def update(self, schema: str, object_name: str, data: str) -> str:
         """ Actualiza el objeto con el nuevo data """
-        pass
+        try:
+            collection = self.db[schema]
+            result = collection.update_one({"obj_name": object_name},  {"$set": data})
+            output = result
+        except Exception as e:
+            raise(ExceptionModule(ErrorMessages.PUT_ERROR + str(e)))
+
+        return output
 
     def remove(self, schema: str, object_name: str) -> str:
         """ Borra el objeto """
