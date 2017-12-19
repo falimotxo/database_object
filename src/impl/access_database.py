@@ -9,19 +9,19 @@ class AccessDatabase(object):
 
     @abc.abstractmethod
     def get(self, schema: str, object_name: str, id='all', criteria='all') -> str:
-        return
+        pass
 
     @abc.abstractmethod
     def put(self, schema: str, object_name: str, data: str) -> str:
-        return
+        pass
 
     @abc.abstractmethod
     def update(self, schema: str, object_name: str, data: str) -> str:
-        return
+        pass
 
     @abc.abstractmethod
     def remove(self, schema: str, object_name: str) -> str:
-        return
+        pass
 
     def get_connection(self) -> str:
         return self.connection

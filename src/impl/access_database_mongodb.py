@@ -1,7 +1,7 @@
-# -*- coding: utf-8 -*-
 from access_database import AccessDatabase
 from pymongo import MongoClient, errors
-from exception_module import ExceptionModule, ErrorMessages
+
+from src.data_model import ExceptionModule, ErrorMessages
 
 
 class AccessDatabaseMongoDB(AccessDatabase):
@@ -18,8 +18,7 @@ class AccessDatabaseMongoDB(AccessDatabase):
         """ Devuelve de base de datos el objeto. """
         try:
             collection = self.db[schema]
-            empCol = collection.find_one({"obj_name": object_name})
-            output = empCol
+            output = collection.find_one({"obj_name": object_name})
         except Exception as e:
             raise(ExceptionModule(ErrorMessages.GET_ERROR + str(e)))
 

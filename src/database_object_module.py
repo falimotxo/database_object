@@ -1,17 +1,5 @@
-from access_database import AccessDatabase
-from access_database_factory import AccessDatabaseFactory
-from database_object import DatabaseObject
-from pickle import dumps
-
-
-class DatabaseObjectResult(object):
-    def __init__(self, code: str, data: str, msg='', exception=None) -> None:
-        super().__init__()
-        self.code_list = ('OK', 'KO')
-        self.code = code
-        self.data = data
-        self.msg = msg
-        self.exception = exception
+from src.data_model import DatabaseObject, DatabaseObjectResult
+from src.impl.access_database_factory import AccessDatabaseFactory
 
 
 class DatabaseObjectModule(object):
@@ -21,11 +9,14 @@ class DatabaseObjectModule(object):
         self.access = AccessDatabaseFactory().get_access_database()
 
     def get(self, schema: str, object_name: str, id='all', criteria='all') -> DatabaseObjectResult:
-        ret = self.access.get(schema, object_name)
+        ret = self.access.get(schema, object_name, id, criteria)
         return self._get_data_object_result_from_json('get', ret)
 
+    def put_object(self, schema: str, object_name: str, data: DatabaseObject) -> DatabaseObjectResult:
+        return self.put(schema, object_name, data.__dict__)
+
     def put(self, schema: str, object_name: str, data) -> DatabaseObjectResult:
-        ret = self.access.put(schema, object_name, data.__dict__)
+        ret = self.access.put(schema, object_name, data)
         return self._get_data_object_result_from_json('put', ret)
 
     def update(self, schema: str, object_name: str, data) -> DatabaseObjectResult:

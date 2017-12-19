@@ -1,5 +1,5 @@
-from access_database_mongodb import AccessDatabaseMongoDB
-from access_database import AccessDatabase
+from src.impl.access_database import AccessDatabase
+from src.impl.access_database_mongodb import AccessDatabaseMongoDB
 
 
 class AccessDatabaseFactory(object):

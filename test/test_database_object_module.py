@@ -1,6 +1,8 @@
 import unittest
-from database_object_module import DatabaseObjectModule
-from database_object import DatabaseObject
+
+from src.data_model import DatabaseObject
+from src.database_object_module import DatabaseObjectModule
+
 
 class DatabaseObjectTest(DatabaseObject):
     def __init__(self, id: str = None) -> None:
@@ -22,7 +24,7 @@ class TestDatabaseObjectModule(unittest.TestCase):
     def test_1_put(self):
         print('Testing ' + self.__class__.__name__ + ' put')
         data = DatabaseObjectTest()
-        database_object_result = self.module.put('TEST', 'DatabaseObjectTest', data)
+        database_object_result = self.module.put_object('TEST', 'DatabaseObjectTest', data)
 
         self.assertEqual(True, True)
 
