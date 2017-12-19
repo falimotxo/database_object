@@ -8,7 +8,7 @@ class AccessDatabase(object):
         self.connection = connection
 
     @abc.abstractmethod
-    def get(self, schema: str, object_name: str, id='all', criteria='all') -> str:
+    def get(self, schema: str, object_name: str, id: str = 'all', criteria: str = 'all') -> str:
         pass
 
     @abc.abstractmethod

@@ -1,6 +1,7 @@
-from src.impl.access_database import AccessDatabase
 from pymongo import MongoClient, errors
+
 from src.data_model import DatabaseObjectException, ErrorMessages
+from src.impl.access_database import AccessDatabase
 
 
 class AccessDatabaseMongoDB(AccessDatabase):
@@ -13,7 +14,7 @@ class AccessDatabaseMongoDB(AccessDatabase):
         except errors.ConnectionFailure as e:
             raise(DatabaseObjectException(ErrorMessages.CONNECTION_ERROR + str(e)))
 
-    def get(self, schema: str, object_name: str, id='all', criteria='all') -> str:
+    def get(self, schema: str, object_name: str, id: str = 'all', criteria: str = 'all') -> str:
         """ Devuelve de base de datos el objeto. """
         try:
             collection = self.db[schema]

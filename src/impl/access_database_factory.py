@@ -23,4 +23,4 @@ class AccessDatabaseFactory(object):
             return AccessDatabaseMongoDB(self.connection_database)
 
         else:
-            raise(DatabaseObjectException(ErrorMessages.CONFIGURATION_ERROR))
+            raise (DatabaseObjectException(ErrorMessages.CONFIGURATION_ERROR))
