@@ -4,7 +4,6 @@ from src.data_model import DatabaseObject
 from src.database_object_module import DatabaseObjectModule
 
 
-
 class DatabaseObjectTest(DatabaseObject):
     def __init__(self, id: str = None) -> None:
         super().__init__(id)
@@ -61,6 +60,7 @@ class TestDatabaseObjectModule(unittest.TestCase):
         database_object_result = self.module.remove('TEST', 'DatabaseObjectTest')
 
         self.assertEqual(True, True)
+
 
 if __name__ == '__main__':
     unittest.main()

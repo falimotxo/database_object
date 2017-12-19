@@ -25,4 +25,3 @@ class AccessDatabase(object):
 
     def get_connection(self) -> str:
         return self.connection
-

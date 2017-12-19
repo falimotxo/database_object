@@ -6,7 +6,7 @@ class DatabaseObjectModule(object):
 
     def __init__(self) -> None:
         super().__init__()
-        self.access = AccessDatabaseFactory().get_access_database()
+        self.access = AccessDatabaseFactory('test', 'testConnection').get_access_database()
 
     def get(self, schema: str, object_name: str, id='all', criteria='all') -> DatabaseObjectResult:
         ret = self.access.get(schema, object_name, id, criteria)
@@ -31,3 +31,7 @@ class DatabaseObjectModule(object):
         pass
 
 
+class DatabaseConfigureModule(object):
+
+    def __init__(self) -> None:
+        super().__init__()

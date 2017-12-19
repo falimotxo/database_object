@@ -1,7 +1,6 @@
 from src.impl.access_database import AccessDatabase
 from pymongo import MongoClient, errors
-
-from src.data_model import ExceptionModule, ErrorMessages
+from src.data_model import DatabaseObjectException, ErrorMessages
 
 
 class AccessDatabaseMongoDB(AccessDatabase):
@@ -12,7 +11,7 @@ class AccessDatabaseMongoDB(AccessDatabase):
             client = MongoClient(connection)
             self.db = client['database']
         except errors.ConnectionFailure as e:
-            raise(ExceptionModule(ErrorMessages.CONNECTION_ERROR + str(e)))
+            raise(DatabaseObjectException(ErrorMessages.CONNECTION_ERROR + str(e)))
 
     def get(self, schema: str, object_name: str, id='all', criteria='all') -> str:
         """ Devuelve de base de datos el objeto. """
@@ -20,7 +19,7 @@ class AccessDatabaseMongoDB(AccessDatabase):
             collection = self.db[schema]
             output = collection.find_one({"obj_name": object_name})
         except Exception as e:
-            raise(ExceptionModule(ErrorMessages.GET_ERROR + str(e)))
+            raise(DatabaseObjectException(ErrorMessages.GET_ERROR + str(e)))
 
         return output
 
@@ -32,7 +31,7 @@ class AccessDatabaseMongoDB(AccessDatabase):
             result = collection.insert_one(new_data)
             output = result.inserted_id
         except Exception as e:
-            raise(ExceptionModule(ErrorMessages.PUT_ERROR + str(e)))
+            raise(DatabaseObjectException(ErrorMessages.PUT_ERROR + str(e)))
 
         return output
 
@@ -43,7 +42,7 @@ class AccessDatabaseMongoDB(AccessDatabase):
             result = collection.update_one({"obj_name": object_name},  {"$set": data})
             output = result
         except Exception as e:
-            raise(ExceptionModule(ErrorMessages.PUT_ERROR + str(e)))
+            raise(DatabaseObjectException(ErrorMessages.PUT_ERROR + str(e)))
 
         return output
 
@@ -53,8 +52,6 @@ class AccessDatabaseMongoDB(AccessDatabase):
             collection = self.db[schema]
             output = collection.delete_one({"obj_name": object_name})
         except Exception as e:
-            raise(ExceptionModule(ErrorMessages.REMOVE_ERROR + str(e)))
+            raise(DatabaseObjectException(ErrorMessages.REMOVE_ERROR + str(e)))
 
         return output
-
-
