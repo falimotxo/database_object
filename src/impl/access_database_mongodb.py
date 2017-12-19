@@ -39,7 +39,7 @@ class AccessDatabaseMongoDB(AccessDatabase):
 
         return output
 
-    def update(self, schema: str, object_name: str, data: str) -> str:
+    def update(self, schema: str, object_name: str, data: str, id: str = 'all', criteria: str = 'all') -> str:
         """ Actualiza el objeto con el nuevo data """
         try:
             collection = self.db[schema]
@@ -50,7 +50,7 @@ class AccessDatabaseMongoDB(AccessDatabase):
 
         return output
 
-    def remove(self, schema: str, object_name: str) -> str:
+    def remove(self, schema: str, object_name: str, id: str = 'all', criteria: str = 'all') -> str:
         """ Borra el objeto """
         try:
             collection = self.db[schema]

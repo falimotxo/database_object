@@ -16,11 +16,11 @@ class AccessDatabase(object):
         pass
 
     @abc.abstractmethod
-    def update(self, schema: str, object_name: str, data: str) -> str:
+    def update(self, schema: str, object_name: str, data: str, id: str = 'all', criteria: str = 'all') -> str:
         pass
 
     @abc.abstractmethod
-    def remove(self, schema: str, object_name: str) -> str:
+    def remove(self, schema: str, object_name: str, id: str = 'all', criteria: str = 'all') -> str:
         pass
 
     def get_connection(self) -> str:

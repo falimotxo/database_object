@@ -25,12 +25,13 @@ class DatabaseObjectModule(object):
         ret = self.access.put(schema, object_name, data)
         return self._get_data_object_result_from_json('put', ret)
 
-    def update(self, schema: str, object_name: str, data) -> DatabaseObjectResult:
-        ret = self.access.update(schema, object_name, data.__dict__)
+    def update(self, schema: str, object_name: str, data, id: str = 'all',
+               criteria: str = 'all') -> DatabaseObjectResult:
+        ret = self.access.update(schema, object_name, data.__dict__, id, criteria)
         return self._get_data_object_result_from_json('update', ret)
 
-    def remove(self, schema: str, object_name: str) -> DatabaseObjectResult:
-        ret = self.access.remove(schema, object_name)
+    def remove(self, schema: str, object_name: str, id: str = 'all', criteria: str = 'all') -> DatabaseObjectResult:
+        ret = self.access.remove(schema, object_name, id, criteria)
         return self._get_data_object_result_from_json('remove', ret)
 
     def _get_data_object_result_from_json(self, from_method: str, json: str) -> DatabaseObjectResult:
