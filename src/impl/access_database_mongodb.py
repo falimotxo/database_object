@@ -1,4 +1,4 @@
-from access_database import AccessDatabase
+from src.impl.access_database import AccessDatabase
 from pymongo import MongoClient, errors
 
 from src.data_model import ExceptionModule, ErrorMessages
@@ -51,7 +51,7 @@ class AccessDatabaseMongoDB(AccessDatabase):
         """ Borra el objeto """
         try:
             collection = self.db[schema]
-            output = collection.remove({"obj_name": object_name})
+            output = collection.delete_one({"obj_name": object_name})
         except Exception as e:
             raise(ExceptionModule(ErrorMessages.REMOVE_ERROR + str(e)))
 
