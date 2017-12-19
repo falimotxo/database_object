@@ -21,7 +21,7 @@ class DatabaseObjectModule(object):
     def put_object(self, schema: str, object_name: str, data: DatabaseObject) -> DatabaseObjectResult:
         return self.put(schema, object_name, data.__dict__)
 
-    def put(self, schema: str, object_name: str, data) -> DatabaseObjectResult:
+    def put(self, schema: str, object_name: str, data: str) -> DatabaseObjectResult:
         ret = self.access.put(schema, object_name, data)
         return self._get_data_object_result_from_json('put', ret)
 
@@ -34,7 +34,12 @@ class DatabaseObjectModule(object):
         return self._get_data_object_result_from_json('remove', ret)
 
     def _get_data_object_result_from_json(self, from_method: str, json: str) -> DatabaseObjectResult:
-        pass
+        ret = ''
+        if from_method == 'put':
+            data = '{"id": "%s"}' % str(json)
+            ret = DatabaseObjectResult('OK', data)  # '{"id": "{}"}'.format(json)) #['data']['id']))
+
+        return ret
 
 
 class DatabaseConfigureModule(object):
