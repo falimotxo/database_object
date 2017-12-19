@@ -30,7 +30,10 @@ class AccessDatabaseMongoDB(AccessDatabase):
             collection = self.db[schema]
             new_data = {'obj_name': object_name, 'data': data}
             result = collection.insert_one(new_data)
-            output = result.inserted_id
+            if data['id'] == None:
+                output = str(result.inserted_id)
+            else:
+                output = data['id']
         except Exception as e:
             raise(DatabaseObjectException(ErrorMessages.PUT_ERROR + str(e)))
 
