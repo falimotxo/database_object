@@ -12,11 +12,11 @@ class AccessDatabase(object):
         pass
 
     @abc.abstractmethod
-    def put(self, schema: str, object_name: str, data: str) -> str:
+    def put(self, schema: str, object_name: str, data: dict) -> str:
         pass
 
     @abc.abstractmethod
-    def update(self, schema: str, object_name: str, data: str, id: str = 'all', criteria: str = 'all') -> str:
+    def update(self, schema: str, object_name: str, data: dict, id: str = 'all', criteria: str = 'all') -> str:
         pass
 
     @abc.abstractmethod

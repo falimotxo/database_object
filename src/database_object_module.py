@@ -38,7 +38,13 @@ class DatabaseObjectModule(object):
         ret = ''
         if from_method == 'put':
             data = '{"id": "%s"}' % str(json)
-            ret = DatabaseObjectResult('OK', data)  # '{"id": "{}"}'.format(json)) #['data']['id']))
+            ret = DatabaseObjectResult('OK', data)
+        elif from_method == 'get':
+            ret = DatabaseObjectResult('OK', json)
+        elif from_method == 'update':
+            ret = DatabaseObjectResult('OK', json)
+        elif from_method == 'remove':
+            ret = DatabaseObjectResult('OK', json)
 
         return ret
 

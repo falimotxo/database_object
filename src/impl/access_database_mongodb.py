@@ -39,12 +39,12 @@ class AccessDatabaseMongoDB(AccessDatabase):
 
         return output
 
-    def update(self, schema: str, object_name: str, data: str, id: str = 'all', criteria: str = 'all') -> str:
+    def update(self, schema: str, object_name: str, data: dict, id: str = 'all', criteria: str = 'all') -> str:
         """ Actualiza el objeto con el nuevo data """
         try:
             collection = self.db[schema]
             result = collection.update_one({"obj_name": object_name},  {"$set": data})
-            output = result
+            output = {'matched_count': result.matched_count, 'modified_count': result.modified_count}
         except Exception as e:
             raise(DatabaseObjectException(ErrorMessages.PUT_ERROR + str(e)))
 
@@ -54,7 +54,8 @@ class AccessDatabaseMongoDB(AccessDatabase):
         """ Borra el objeto """
         try:
             collection = self.db[schema]
-            output = collection.delete_one({"obj_name": object_name})
+            result = collection.delete_one({"obj_name": object_name})
+            output = {'deleted_count': result.deleted_count}
         except Exception as e:
             raise(DatabaseObjectException(ErrorMessages.REMOVE_ERROR + str(e)))
 
