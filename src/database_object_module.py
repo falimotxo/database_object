@@ -19,7 +19,7 @@ class DatabaseObjectModule(object):
         return self._get_data_object_result_from_json('get', ret)
 
     def put_object(self, schema: str, object_name: str, data: DatabaseObject) -> DatabaseObjectResult:
-        return self.put(schema, object_name, str(data.__dict__))
+        return self.put(schema, object_name, data.__dict__)
 
     def put(self, schema: str, object_name: str, data: str) -> DatabaseObjectResult:
         ret = self.access.put(schema, object_name, data)

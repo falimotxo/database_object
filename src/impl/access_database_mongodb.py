@@ -24,7 +24,7 @@ class AccessDatabaseMongoDB(AccessDatabase):
 
         return output
 
-    def put(self, schema: str, object_name: str, data: str) -> str:
+    def put(self, schema: str, object_name: str, data: dict) -> str:
         """ Envia a base de datos el objeto. """
         try:
             collection = self.db[schema]
