@@ -5,6 +5,7 @@ from src.database_object_module import DatabaseObjectModule
 
 
 class DatabaseObjectTest(DatabaseObject):
+
     def __init__(self, id: str = None) -> None:
         super().__init__(id)
         self.attr1 = 'attr1'
