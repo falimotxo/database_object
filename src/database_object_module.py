@@ -38,10 +38,11 @@ class DatabaseObjectModule(object):
 
 
 class DatabaseConfigureModule(object):
-    PATH_CONFIGURE_FILE = '/etc/config.ini'
+    PATH_CONFIGURE_FILE = '/../etc/config.ini'
 
     def __init__(self) -> None:
         super().__init__()
+        print('En la clase:' + path.dirname(__file__))
         self.config = ConfigParser()
         self.config.read(path.dirname(__file__) + DatabaseConfigureModule.PATH_CONFIGURE_FILE)
 
