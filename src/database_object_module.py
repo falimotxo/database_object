@@ -8,53 +8,48 @@ from src.impl.access_database_factory import AccessDatabaseFactory
 class DatabaseObjectModule(object):
 
     def __init__(self) -> None:
-        super().__init__()
+        super(DatabaseObjectModule, self).__init__()
         config = DatabaseConfigureModule()
         name_database = config.get_value('name_database')
         connection_database = config.get_value('connection_database')
-        self.access = AccessDatabaseFactory(name_database, connection_database).get_access_database()
+        self.access_db = AccessDatabaseFactory.get_access_database(name_database, connection_database)
 
-    def get(self, schema: str, object_name: str, id: str = 'all', criteria: str = 'all') -> DatabaseObjectResult:
-        ret = self.access.get(schema, object_name, id, criteria)
-        return self._get_data_object_result_from_json('get', ret)
+    def get(self, schema: str, object_name: str, condition: tuple = ('_id', '!=', ''),
+            criteria: str = '', native_criteria: bool = False) -> DatabaseObjectResult:
+        ret = self.access_db.get(schema, object_name, condition, criteria, native_criteria)
+        return DatabaseObjectModule._get_data_object_result_from_json('get', ret)
 
     def put_object(self, schema: str, object_name: str, data: DatabaseObject) -> DatabaseObjectResult:
         return self.put(schema, object_name, data.__dict__)
 
     def put(self, schema: str, object_name: str, data: dict) -> DatabaseObjectResult:
-        ret = self.access.put(schema, object_name, data)
-        return self._get_data_object_result_from_json('put', ret)
+        ret = self.access_db.put(schema, object_name, data)
+        return DatabaseObjectModule._get_data_object_result_from_json('put', ret)
 
-    def update(self, schema: str, object_name: str, data, id: str = 'all',
-               criteria: str = 'all') -> DatabaseObjectResult:
-        ret = self.access.update(schema, object_name, data.__dict__, id, criteria)
-        return self._get_data_object_result_from_json('update', ret)
+    def update_object(self, schema: str, object_name: str, data: DatabaseObject, condition: tuple = ('_id', '!=', ''),
+                      criteria: str = '', native_criteria: bool = False) -> DatabaseObjectResult:
+        return self.update(schema, object_name, data.__dict__, condition, criteria, native_criteria)
 
-    def remove(self, schema: str, object_name: str, id: str = 'all', criteria: str = 'all') -> DatabaseObjectResult:
-        ret = self.access.remove(schema, object_name, id, criteria)
-        return self._get_data_object_result_from_json('remove', ret)
+    def update(self, schema: str, object_name: str, data: dict, condition: tuple = ('_id,' '!=', ''),
+               criteria: str = '', native_criteria: bool = False) -> DatabaseObjectResult:
+        ret = self.access_db.update(schema, object_name, data, condition, criteria, native_criteria)
+        return DatabaseObjectModule._get_data_object_result_from_json('update', ret)
 
-    def _get_data_object_result_from_json(self, from_method: str, json: str) -> DatabaseObjectResult:
-        ret = ''
-        if from_method == 'put':
-            data = '{"id": "%s"}' % str(json)
-            ret = DatabaseObjectResult('OK', data)
-        elif from_method == 'get':
-            ret = DatabaseObjectResult('OK', json)
-        elif from_method == 'update':
-            ret = DatabaseObjectResult('OK', json)
-        elif from_method == 'remove':
-            ret = DatabaseObjectResult('OK', json)
+    def remove(self, schema: str, object_name: str, condition: tuple = ('_id', '!=', ''),
+               criteria: str = '', native_criteria: bool = False) -> DatabaseObjectResult:
+        ret = self.access_db.remove(schema, object_name, condition, criteria, native_criteria)
+        return DatabaseObjectModule._get_data_object_result_from_json('remove', ret)
 
-        return ret
+    @staticmethod
+    def _get_data_object_result_from_json(from_method: str, result: list) -> DatabaseObjectResult:
+        return DatabaseObjectResult(from_method, str(result))
 
 
 class DatabaseConfigureModule(object):
     PATH_CONFIGURE_FILE = '/../etc/config.ini'
 
     def __init__(self) -> None:
-        super().__init__()
-        print(path.dirname(__file__))
+        super(DatabaseConfigureModule, self).__init__()
         self.config = ConfigParser()
         self.config.read(path.dirname(__file__) + DatabaseConfigureModule.PATH_CONFIGURE_FILE)
 
@@ -65,4 +60,4 @@ class DatabaseConfigureModule(object):
         try:
             return self.config[section][key]
         except Exception as e:
-            raise (DatabaseObjectException(ErrorMessages.KEYFILE_ERROR + str(e)))
+            raise DatabaseObjectException(ErrorMessages.KEYFILE_ERROR + str(e))

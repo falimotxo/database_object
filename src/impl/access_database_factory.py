@@ -4,23 +4,21 @@ from src.impl.access_database_mongodb import AccessDatabaseMongoDB
 
 
 class AccessDatabaseFactory(object):
+    _access_database = None
 
-    def __init__(self, name_database: str, connection_database: str) -> None:
-        super().__init__()
-        self.access_database = None
-        self.name_database = name_database
-        self.connection_database = connection_database
+    def __init__(self) -> None:
+        super(AccessDatabaseFactory, self).__init__()
 
-    def get_access_database(self) -> AccessDatabase:
-        if self.access_database is not None:
-            return self.access_database
+    @staticmethod
+    def get_access_database(name_database: str, connection_database: str) -> AccessDatabase:
+        if AccessDatabaseFactory._access_database is None:
+            AccessDatabaseFactory._access_database = AccessDatabaseFactory._implement_database(name_database,
+                                                                                               connection_database)
+        return AccessDatabaseFactory._access_database
 
-        self.access_database = self._implement_database()
-        return self.access_database
-
-    def _implement_database(self) -> AccessDatabase:
-        if self.name_database == 'mongodb':
-            return AccessDatabaseMongoDB(self.connection_database)
-
+    @staticmethod
+    def _implement_database(name_database: str, connection_database: str) -> AccessDatabase:
+        if name_database == 'mongodb':
+            return AccessDatabaseMongoDB(connection_database)
         else:
-            raise (DatabaseObjectException(ErrorMessages.CONFIGURATION_ERROR))
+            raise DatabaseObjectException(ErrorMessages.CONFIGURATION_ERROR)
