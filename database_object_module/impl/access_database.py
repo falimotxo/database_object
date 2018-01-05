@@ -9,6 +9,8 @@ class AccessDatabase(object):
 
     # Field _id
     ID_FIELD = '_id'
+
+    # # Field _timestamp
     TIMESTAMP_FIELD = '_timestamp'
 
     def __init__(self, connection: str) -> None:
@@ -25,15 +27,15 @@ class AccessDatabase(object):
         self.connection = connection
 
     @abc.abstractmethod
-    def get(self, schema: str, conditions: tuple, criteria: str, native_criteria: bool) -> list:
+    def get(self, schema: str, conditions: list, criteria: str, native_criteria: bool) -> list:
         """
         Get the object from the database.
 
         :param schema: name of schema of the database
         :type schema: str
 
-        :param condition: conditions to update the object (tuple of tuples)
-        :type condition: tuple
+        :param conditions: conditions to update the object (list of tuples)
+        :type conditions: list
 
         :param criteria: advanced condition for complex searches, can be native or generic
         :type criteria: str
@@ -54,8 +56,8 @@ class AccessDatabase(object):
         :param schema: name of schema of the database
         :type schema: str
 
-        :param data: list of objects to put into the database
-        :type data: list
+        :param data: dict of objects to put into the database
+        :type data: dict
 
         :return: list with inserted _id
         :rtype: list of dictionary
@@ -63,7 +65,7 @@ class AccessDatabase(object):
         pass
 
     @abc.abstractmethod
-    def update(self, schema: str, data: dict, conditions: tuple, criteria: str,
+    def update(self, schema: str, data: dict, conditions: list, criteria: str,
                native_criteria: bool) -> list:
         """
         Update the object from the database.
@@ -74,8 +76,8 @@ class AccessDatabase(object):
         :param data: list of objects to update into the database
         :type data: list
 
-        :param condition: conditions to update the object (tuple of tuples)
-        :type condition: tuple
+        :param conditions: conditions to update the object (list of tuples)
+        :type conditions: list
 
         :param criteria: advanced condition for complex searches, can be native or generic
         :type criteria: str
@@ -89,15 +91,15 @@ class AccessDatabase(object):
         pass
 
     @abc.abstractmethod
-    def remove(self, schema: str, condition: tuple, criteria: str, native_criteria: bool) -> list:
+    def remove(self, schema: str, conditions: list, criteria: str, native_criteria: bool) -> list:
         """
         Update the object from the database.
 
         :param schema: name of schema of the database
         :type schema: str
 
-        :param condition: conditions to update the object (tuple of tuples)
-        :type condition: tuple
+        :param conditions: conditions to update the object (list of tuples)
+        :type conditions: list
 
         :param criteria: advanced condition for complex searches, can be native or generic
         :type criteria: str
