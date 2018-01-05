@@ -9,7 +9,7 @@ class AccessDatabaseFactory(object):
     _access_database = None
 
     def __init__(self) -> None:
-        super(AccessDatabaseFactory, self).__init__()
+        pass
 
     @staticmethod
     def get_access_database(name_database: str, connection_database: str) -> AccessDatabase:
