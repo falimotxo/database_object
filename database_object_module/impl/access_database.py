@@ -7,6 +7,10 @@ class AccessDatabase(object):
     """
     __metaclass__ = abc.ABCMeta
 
+    # Field _id
+    ID_FIELD = '_id'
+    TIMESTAMP_FIELD = '_timestamp'
+
     def __init__(self, connection: str) -> None:
         """
         Builder method of the class.
@@ -17,21 +21,18 @@ class AccessDatabase(object):
         :return: this function return nothing
         :rtype: None
         """
-        super(AccessDatabase, self).__init__()
+
         self.connection = connection
 
     @abc.abstractmethod
-    def get(self, schema: str, object_name: str, condition: tuple, criteria: str, native_criteria: bool) -> list:
+    def get(self, schema: str, conditions: tuple, criteria: str, native_criteria: bool) -> list:
         """
         Get the object from the database.
 
         :param schema: name of schema of the database
         :type schema: str
 
-        :param object_name: name of the object to get
-        :type object_name: str
-
-        :param condition: native condition to get the object
+        :param condition: conditions to update the object (tuple of tuples)
         :type condition: tuple
 
         :param criteria: advanced condition for complex searches, can be native or generic
@@ -41,31 +42,28 @@ class AccessDatabase(object):
         :type native_criteria: bool
 
         :return: list of objects gotten as a dictionary
-        :rtype: list
+        :rtype: list of dictionary
         """
         pass
 
     @abc.abstractmethod
-    def put(self, schema: str, object_name: str, data: dict) -> list:
+    def put(self, schema: str, data: dict) -> list:
         """
         Put the object into the database.
 
         :param schema: name of schema of the database
         :type schema: str
 
-        :param object_name: name of the object to put
-        :type object_name: str
-
         :param data: list of objects to put into the database
         :type data: list
 
-        :return: ----------------
-        :rtype: list
+        :return: list with inserted _id
+        :rtype: list of dictionary
         """
         pass
 
     @abc.abstractmethod
-    def update(self, schema: str, object_name: str, data: dict, condition: tuple, criteria: str,
+    def update(self, schema: str, data: dict, conditions: tuple, criteria: str,
                native_criteria: bool) -> list:
         """
         Update the object from the database.
@@ -73,13 +71,10 @@ class AccessDatabase(object):
         :param schema: name of schema of the database
         :type schema: str
 
-        :param object_name: name of the object to update
-        :type object_name: str
-
         :param data: list of objects to update into the database
         :type data: list
 
-        :param condition: native condition to update the object
+        :param condition: conditions to update the object (tuple of tuples)
         :type condition: tuple
 
         :param criteria: advanced condition for complex searches, can be native or generic
@@ -88,23 +83,20 @@ class AccessDatabase(object):
         :param native_criteria: select between native criteria or generic criteria
         :type native_criteria: bool
 
-        :return: ----------------
-        :rtype: list
+        :return: number of updated elements in a list of dictionary
+        :rtype: list of dictionary
         """
         pass
 
     @abc.abstractmethod
-    def remove(self, schema: str, object_name: str, condition: tuple, criteria: str, native_criteria: bool) -> list:
+    def remove(self, schema: str, condition: tuple, criteria: str, native_criteria: bool) -> list:
         """
         Update the object from the database.
 
         :param schema: name of schema of the database
         :type schema: str
 
-        :param object_name: name of the object to remove
-        :type object_name: str
-
-        :param condition: native condition to update the object
+        :param condition: conditions to update the object (tuple of tuples)
         :type condition: tuple
 
         :param criteria: advanced condition for complex searches, can be native or generic
@@ -113,16 +105,7 @@ class AccessDatabase(object):
         :param native_criteria: select between native criteria or generic criteria
         :type native_criteria: bool
 
-        :return: ----------------
-        :rtype: list
+        :return: number of removed elements in a list of dictionary
+        :rtype: list of dictionary
         """
         pass
-
-    def get_connection(self) -> str:
-        """
-        Get the name of the database connection.
-
-        :return: the name of the database connection
-        :rtype: str
-        """
-        return self.connection

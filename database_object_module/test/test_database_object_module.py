@@ -1,7 +1,7 @@
 import unittest
 
-from src.data_model import DatabaseObject
-from src.database_object_module import DatabaseObjectModule
+from database_object_module.data_model import DatabaseObject
+from database_object_module.database_object_module import DatabaseObjectModule
 
 
 class DatabaseObjectTest(DatabaseObject):

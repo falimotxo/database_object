@@ -1,20 +1,23 @@
 class DatabaseObject(object):
 
-    def __init__(self, _id: str = '') -> None:
-        super(DatabaseObject, self).__init__()
-        self._id = _id
+    def __init__(self) -> None:
+        self._id = ''
+        self._timestamp = None
 
     def get_id(self) -> str:
         return self._id
 
-    def set_id(self, _id: str = '') -> None:
-        self._id = _id
+    def get_timestamp(self) -> int:
+        return self._timestamp
+
+    def __repr__(self):
+        # This method is used for store objects inside objects. repr must return string in dictionary format
+        raise NotImplementedError(ErrorMessages.REPR_ERROR)
 
 
 class DatabaseObjectResult(object):
 
     def __init__(self, code: str, data: str, msg: str = '', exception: Exception = None) -> None:
-        super(DatabaseObjectResult, self).__init__()
         self.code_list = ('OK', 'KO')
         self.code = code
         self.data = data
@@ -40,6 +43,5 @@ class ErrorMessages(object):
     ID_ERROR = 'Error in the ID format '
     SCHEMA_ERROR = 'Error accessing non-existent schema '
     CRITERIA_ERROR = 'Error in action criteria '
-
-    def __init__(self) -> None:
-        super(ErrorMessages, self).__init__()
+    MAX_ID_ERROR = 'Maximum id reached (999999999999). Operation not realized '
+    REPR_ERROR = 'Method __repr__ must be implemented '
