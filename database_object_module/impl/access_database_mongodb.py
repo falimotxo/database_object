@@ -78,10 +78,11 @@ class AccessDatabaseMongoDB(AccessDatabase):
             mongo_collect = self._get_collect(schema, create=True)
 
             # Change _id to ObjectId because mongodb needs it
-            mongo_data = AccessDatabaseMongoDB._change_id_in_mongo_data(data, True)
+            mongo_data = AccessDatabaseMongoDB._create_mongo_data(data, True)
 
             # Insert data and recover _id
-            mongo_id = mongo_collect.insert_one(mongo_data).inserted_id
+            insert = mongo_collect.insert_one(mongo_data)
+            mongo_id = insert.inserted_id
 
             # Convert _id from ObjectId native format for _id to String, and add to output list in dictionary format
             str_id = AccessDatabaseMongoDB._mongoid_to_str(mongo_id)
@@ -186,19 +187,19 @@ class AccessDatabaseMongoDB(AccessDatabase):
         else:
             del mongo_data[AccessDatabaseMongoDB.TIMESTAMP_FIELD]
 
-        if AccessDatabaseMongoDB._is_there_id(data):
+        if AccessDatabaseMongoDB._is_id_empty(data):
             del mongo_data[AccessDatabaseMongoDB.ID_FIELD]
 
         return mongo_data
 
     @staticmethod
-    def _is_there_id(data: dict) -> bool:
+    def _is_id_empty(data: dict) -> bool:
         """
         Check if exists _id field in dictionary data
         :param data: dictionary
         :return: bool
         """
-        return len(data[AccessDatabaseMongoDB.ID_FIELD]) > 0
+        return len(data[AccessDatabaseMongoDB.ID_FIELD]) == 0
 
     @staticmethod
     def _create_mongo_criteria(conditions: tuple, criteria: str, native_criteria: bool) -> dict:
