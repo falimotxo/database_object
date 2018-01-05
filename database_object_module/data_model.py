@@ -17,12 +17,18 @@ class DatabaseObject(object):
 
 class DatabaseObjectResult(object):
 
-    def __init__(self, code: str, data: str, msg: str = '', exception: Exception = None) -> None:
-        self.code_list = ('OK', 'KO')
+    CODE_OK = 'OK'
+    CODE_KO = 'KO'
+
+    def __init__(self, code: str, data: str = '', msg: str = '', exception: Exception = None) -> None:
+        self.code_list = (DatabaseObjectResult.CODE_OK, DatabaseObjectResult.CODE_KO)
         self.code = code
         self.data = data
         self.msg = msg
         self.exception = exception
+
+    def get_object_from_data(self):
+        pass
 
 
 class DatabaseObjectException(Exception):

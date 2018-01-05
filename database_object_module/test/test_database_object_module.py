@@ -1,7 +1,7 @@
-import unittest
-
 from database_object_module.data_model import DatabaseObject
 from database_object_module.database_object_module import DatabaseObjectModule
+
+from nose.tools import assert_equal, assert_true, assert_false, raises
 
 
 class DatabaseObjectTest_1(DatabaseObject):
@@ -13,13 +13,14 @@ class DatabaseObjectTest_1(DatabaseObject):
 class DatabaseObjectTest_2(DatabaseObject):
 
     def __init__(self) -> None:
-        DatabaseObject.__init__()
+        DatabaseObject.__init__(self)
         self.int_arg = int(5)
         self.bool_arg = bool(False)
         self.str_arg = str('cadena de texto')
         self.list_arg = ['one thing', 'another thing']
         self.float_arg = float(7.9)
         self.dict_arg = {'key1': 'value1', 'key2': 'value2'}
+
 
 class TestDatabaseObjectModule(object):
 
@@ -45,11 +46,12 @@ class TestDatabaseObjectModule(object):
         result_1 = self.module.put_object(schema, object_name, data)
 
         id_1 = result_1.data['_id']
-        result_2 = self.module.get(schema, object_name, ('_id', '=', id_1))
+        result_2 = self.module.get(schema, object_name, [('_id', '=', id_1)])
         id_2 = result_2.data['_id']
         # print(database_object_result1.data)
 
-        self.assertEqual(id_1, id_2)
+        assert_equal(id_1, id_2)
+
         # self.assertEqual(id_1, id_2)
 
 
