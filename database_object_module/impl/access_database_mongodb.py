@@ -1,3 +1,4 @@
+import collections
 import time
 
 from bson.objectid import ObjectId, InvalidId
@@ -16,10 +17,18 @@ class AccessDatabaseMongoDB(AccessDatabase):
     MONGO_OPERATORS = {'=': '$eq', '>': '$gt', '>=': '$gte', 'in': '$in',
                        '<': '$lt', '<=': '$lte', '!=': '$ne', 'out': '$nin'}
 
+    # Mongo AND condition
+    MONGO_AND = '$and'
+
     def __init__(self, connection: str) -> None:
         """
         Constructor with url connection
+
         :param connection: url connection from ini file
+        :type connection: str
+
+        :return: This function return nothing
+        :rtype: None
         """
 
         AccessDatabase.__init__(self, connection)
@@ -30,14 +39,24 @@ class AccessDatabaseMongoDB(AccessDatabase):
         except errors.ConnectionFailure as e:
             raise DatabaseObjectException(ErrorMessages.CONNECTION_ERROR + str(e))
 
-    def get(self, schema: str, conditions: tuple, criteria: str, native_criteria: bool) -> list:
+    def get(self, schema: str, conditions: list, criteria: str, native_criteria: bool) -> list:
         """
-        Get data from mongdb
+        Get data from mongodb
+
         :param schema: schema (name of collection in mongodb)
+        :type schema: str
+
         :param conditions: conditions to search (tuple of tuple)
+        :type conditions: list
+
         :param criteria: criteria from mongodb
+        :type criteria: str
+
         :param native_criteria: boolean for search by native criteria from mongodb
+        :type native_criteria: bool
+
         :return: list of dictionary with data
+        :rtype: list
         """
 
         output_list = list()
@@ -161,9 +180,15 @@ class AccessDatabaseMongoDB(AccessDatabase):
     def _get_collect(self, schema: str, create: bool = False) -> collection:
         """
         Get collection from database
+
         :param schema: collection of mongodb
+        :type schema: str
+
         :param create: create collection or not
+        :type create: bool
+
         :return: collection from mongodb
+        :rtype: collection
         """
 
         # If collection exists, get it. Else create it
@@ -178,6 +203,19 @@ class AccessDatabaseMongoDB(AccessDatabase):
 
     @staticmethod
     def _create_mongo_data(data: dict, create_timestamp: bool = False) -> dict:
+        """
+        Create a data with mongo format
+
+        :param data: data to insert into the database
+        :type data: dict
+
+        :param create_timestamp: create timestamp or not
+        :type create_timestamp: bool
+
+        :return: data with mongo format
+        :rtype: dict
+        """
+
         mongo_data = dict()
         mongo_data.update(data)
 
@@ -202,21 +240,32 @@ class AccessDatabaseMongoDB(AccessDatabase):
         return len(data[AccessDatabaseMongoDB.ID_FIELD]) == 0
 
     @staticmethod
-    def _create_mongo_criteria(conditions: tuple, criteria: str, native_criteria: bool) -> dict:
+    def _create_mongo_criteria(conditions: list, criteria: str, native_criteria: bool) -> dict:
         """
         Create criteria native of mongodb
-        :param conditions: tuple of tuple of conditions
+
+        :param conditions: list of tuple of conditions
+        :type conditions: list
+
         :param criteria: native criteria language from mongodb
+        :type criteria: str
+
         :param native_criteria: bool for use native criteria or not
+        :type native_criteria: bool
+
         :return: filter
+        :rtype: dict
         """
-        mongo_criteria = dict()
+
+        # Create a filter with list of empty conditions
+        mongo_criteria = {AccessDatabaseMongoDB.MONGO_AND: list()}
+
         try:
             # Iterate all conditions to create native mongodb filter
             for condition in conditions:
 
-                if condition[0] == AccessDatabaseMongoDB.ID_FIELD:
-                    if isinstance(condition[2], list):
+                if condition[0] == AccessDatabase.ID_FIELD:
+                    if isinstance(condition[2], collections.Iterable):
                         value_compare = [AccessDatabaseMongoDB._str_to_mongoid(element) for element in condition[2]]
                     else:
                         value_compare = AccessDatabaseMongoDB._str_to_mongoid(condition[2])
@@ -224,15 +273,13 @@ class AccessDatabaseMongoDB(AccessDatabase):
                     value_compare = condition[2]
 
                 # Add condition translated to mongodb filter language
-                mongo_criteria.update({
-                    '$and': [
-                        {condition[0]: {AccessDatabaseMongoDB.MONGO_OPERATORS[condition[1]]: value_compare}}
-                    ]
-                })
+                mongo_criteria[AccessDatabaseMongoDB.MONGO_AND].append(
+                    {condition[0]: {AccessDatabaseMongoDB.MONGO_OPERATORS[condition[1]]: value_compare}}
+                )
 
             # Only if native criteria is active, add native from user
             if native_criteria and len(criteria) > 0:
-                mongo_criteria['$and'].append(dict(criteria))
+                mongo_criteria[AccessDatabaseMongoDB.MONGO_AND].append(dict(criteria))
 
         except Exception as e:
             raise DatabaseObjectException(ErrorMessages.CRITERIA_ERROR + str(e))
@@ -241,12 +288,34 @@ class AccessDatabaseMongoDB(AccessDatabase):
 
     @staticmethod
     def _str_to_mongoid(str_id: str) -> ObjectId:
+        """
+        Create mongo_id from str_id
+        :param str_id: id of the object in string format
+        :type str_id: str
+
+        :return: id of the object in ObjectId format
+        :rtype: ObjectId
+        """
+
         try:
+            # Generate ObjectId from hex of the input string
             mongo_id = ObjectId(bytes.fromhex(str_id))
-            return mongo_id
+
         except (InvalidId, ValueError) as e:
             raise DatabaseObjectException(ErrorMessages.ID_ERROR + str(e))
 
+        return mongo_id
+
     @staticmethod
     def _mongoid_to_str(mongo_id: ObjectId) -> str:
+        """
+        Generate str_id from mongo_id
+
+        :param mongo_id: id of the object in ObjectId format
+        :type mongo_id: ObjectId
+
+        :return: id of the object in string format
+        :rtype: str
+        """
+
         return str(mongo_id)

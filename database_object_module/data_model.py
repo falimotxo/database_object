@@ -28,7 +28,7 @@ class DatabaseObjectResult(object):
 class DatabaseObjectException(Exception):
 
     def __init__(self, msg: str = '') -> None:
-        Exception.__init__(self, msg)
+        super(DatabaseObjectException, self).__init__(msg)
 
 
 class ErrorMessages(object):
@@ -43,5 +43,5 @@ class ErrorMessages(object):
     ID_ERROR = 'Error in the ID format '
     SCHEMA_ERROR = 'Error accessing non-existent schema '
     CRITERIA_ERROR = 'Error in action criteria '
-    MAX_ID_ERROR = 'Maximum id reached (999999999999). Operation not realized '
     REPR_ERROR = 'Method __repr__ must be implemented '
+    INHERITANCE_ERROR = 'Data must inherit from DatabaseObject '
