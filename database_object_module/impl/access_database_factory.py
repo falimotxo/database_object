@@ -8,9 +8,6 @@ class AccessDatabaseFactory(object):
     # Static attribute
     _access_database = None
 
-    def __init__(self) -> None:
-        super(AccessDatabaseFactory, self).__init__()
-
     @staticmethod
     def get_access_database(name_database: str, connection_database: str) -> AccessDatabase:
         """

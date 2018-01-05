@@ -28,7 +28,7 @@ class DatabaseObjectResult(object):
 class DatabaseObjectException(Exception):
 
     def __init__(self, msg: str = '') -> None:
-        super(DatabaseObjectException, self).__init__(msg)
+        Exception.__init__(self, msg)
 
 
 class ErrorMessages(object):

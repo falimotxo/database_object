@@ -233,7 +233,7 @@ class AccessDatabaseMongoDB(AccessDatabase):
     @staticmethod
     def _is_id_empty(data: dict) -> bool:
         """
-        Check if exists _id field in dictionary data
+        Check if exists data in _id field in dictionary data
         :param data: dictionary
         :return: bool
         """
