@@ -1,11 +1,15 @@
 import configparser
 import os
+
 from database_object_module.data_model import DatabaseObjectResult, DatabaseObjectException, ErrorMessages, \
     DatabaseObject
 from database_object_module.impl.access_database_factory import AccessDatabaseFactory
 
 
 class DatabaseObjectModule(object):
+    """
+    Main class of database access
+    """
 
     def __init__(self) -> None:
         """
@@ -44,9 +48,9 @@ class DatabaseObjectModule(object):
         try:
             schema_collection = schema + '_' + object_name
             ret = self.access_db.get(schema_collection, conditions, criteria, native_criteria)
-            return DatabaseObjectModule._get_data_object_result_from_json('get', object_name, result = ret)
+            return DatabaseObjectModule._get_data_object_result_from_json('get', object_name, result=ret)
         except DatabaseObjectException as e:
-            return DatabaseObjectModule._get_data_object_result_from_json('get', object_name, exception = e)
+            return DatabaseObjectModule._get_data_object_result_from_json('get', object_name, exception=e)
 
     def put_object(self, schema: str, object_name: str, data: DatabaseObject) -> DatabaseObjectResult:
         """
@@ -210,10 +214,10 @@ class DatabaseObjectModule(object):
             raise DatabaseObjectException(ErrorMessages.INHERITANCE_ERROR)
 
     @staticmethod
-    def _get_data_object_result_from_json(from_method: str, object_name: str, result: list = None, exception: Exception = None) \
-            -> DatabaseObjectResult:
+    def _get_data_object_result_from_json(from_method: str, object_name: str, result: list = None,
+                                          exception: Exception = None) -> DatabaseObjectResult:
         """
-        Convert data from implementated database to data object result
+        Convert data from implemented database to data object result
         :param from_method: method which has been executed
         :param result: data returned by method
         :return: database object result with information about output
@@ -233,6 +237,9 @@ class DatabaseObjectModule(object):
 
 
 class DatabaseConfigureModule(object):
+    """
+    Class to get the configuration options
+    """
 
     # Path configuration of file
     PATH_CONFIGURE_FILE = '/../etc/config.ini'

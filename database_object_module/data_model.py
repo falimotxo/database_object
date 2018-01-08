@@ -1,6 +1,9 @@
 import ast, types
 
 class DatabaseObject(object):
+    """
+    Class of standard data input
+    """
 
     def __init__(self) -> None:
         self._id = ''
@@ -18,7 +21,11 @@ class DatabaseObject(object):
 
 
 class DatabaseObjectResult(object):
+    """
+    Class of standard data result
+    """
 
+    # Module codes
     CODE_OK = 'OK'
     CODE_KO = 'KO'
 
@@ -57,13 +64,20 @@ class DatabaseObjectResult(object):
 
 
 class DatabaseObjectException(Exception):
+    """
+    Class of standard exception of the module
+    """
 
     def __init__(self, msg: str = '') -> None:
         Exception.__init__(self, msg)
 
 
 class ErrorMessages(object):
+    """
+    Class of standar messages of the module
+    """
 
+    # Error messages
     CONNECTION_ERROR = 'Could not connect to database '
     GET_ERROR = 'Error getting data '
     PUT_ERROR = 'Error storing data '

@@ -4,8 +4,11 @@ from database_object_module.impl.access_database_mongodb import AccessDatabaseMo
 
 
 class AccessDatabaseFactory(object):
+    """
+    Class to get any implement of the database
+    """
 
-    # Static attribute
+    # Static access to implemented database
     _access_database = None
 
     @staticmethod
