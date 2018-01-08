@@ -1,8 +1,6 @@
-import collections
 import time
 
-from bson.objectid import ObjectId, InvalidId
-from pymongo import MongoClient, collection, errors
+from pymongo import MongoClient, collection, errors, ASCENDING
 
 from database_object_module.data_model import DatabaseObjectException, ErrorMessages
 from database_object_module.impl.access_database import AccessDatabase
@@ -14,11 +12,15 @@ class AccessDatabaseMongoDB(AccessDatabase):
     """
 
     # Operators
-    MONGO_OPERATORS = {'=': '$eq', '>': '$gt', '>=': '$gte', 'in': '$in',
-                       '<': '$lt', '<=': '$lte', '!=': '$ne', 'out': '$nin'}
+    MONGO_OPERATORS = {
+        '=': '$eq', '>': '$gt', '>=': '$gte', 'in': '$in', '<': '$lt', '<=': '$lte', '!=': '$ne', 'out': '$nin'
+    }
 
-    # Mongo AND condition
-    MONGO_AND = '$and'
+    # Mongo join condition
+    MONGO_JOIN_CONDITION = '$and'
+
+    # Mongo update operators
+    MONGO_UPDATE_OPERATOR = '$set'
 
     def __init__(self, connection: str) -> None:
         """
@@ -39,7 +41,7 @@ class AccessDatabaseMongoDB(AccessDatabase):
         except errors.ConnectionFailure as e:
             raise DatabaseObjectException(ErrorMessages.CONNECTION_ERROR + str(e))
 
-    def get(self, schema: str, conditions: list, criteria: str, native_criteria: bool) -> list:
+    def get(self, schema: str, conditions: tuple, criteria: str, native_criteria: bool) -> list:
         """
         Get data from mongodb
 
@@ -63,7 +65,7 @@ class AccessDatabaseMongoDB(AccessDatabase):
 
         try:
             # Get collection
-            mongo_collect = self._get_collect(schema)
+            mongo_collect = self._get_collection(schema)
 
             # Get criteria in mongodb language
             mongo_criteria = AccessDatabaseMongoDB._create_mongo_criteria(conditions, criteria, native_criteria)
@@ -73,8 +75,8 @@ class AccessDatabaseMongoDB(AccessDatabase):
 
             # For each data: recover _id, set to data and add to output list
             for element in mongo_result:
-                int_id = AccessDatabaseMongoDB._mongoid_to_str(element[AccessDatabaseMongoDB.ID_FIELD])
-                element[AccessDatabaseMongoDB.ID_FIELD] = int_id
+                str_id = AccessDatabaseMongoDB._mongoid_to_str(element[AccessDatabaseMongoDB.ID_FIELD])
+                element[AccessDatabaseMongoDB.ID_FIELD] = str_id
                 output_list.append(element)
 
         except Exception as e:
@@ -85,23 +87,29 @@ class AccessDatabaseMongoDB(AccessDatabase):
     def put(self, schema: str, data: dict) -> list:
         """
         Insert data to mongodb
+
         :param schema: schema (name of collection in mongodb)
+        :type schema: str
+
         :param data: data to store in dictionary format
+        :type data: dict
+
         :return: list of dictionary with inserted _id
+        :rtype: list
         """
 
         output_list = list()
 
         try:
             # Get collection creating it if not exists
-            mongo_collect = self._get_collect(schema, create=True)
+            mongo_collect = self._get_collection(schema, create_collection=True)
 
             # Change _id to ObjectId because mongodb needs it
-            mongo_data = AccessDatabaseMongoDB._create_mongo_data(data, True)
+            mongo_data = AccessDatabaseMongoDB._create_mongo_data(data, create_timestamp=True)
 
             # Insert data and recover _id
-            insert = mongo_collect.insert_one(mongo_data)
-            mongo_id = insert.inserted_id
+            mongo_result = mongo_collect.insert_one(mongo_data)
+            mongo_id = mongo_result.inserted_id
 
             # Convert _id from ObjectId native format for _id to String, and add to output list in dictionary format
             str_id = AccessDatabaseMongoDB._mongoid_to_str(mongo_id)
@@ -116,31 +124,46 @@ class AccessDatabaseMongoDB(AccessDatabase):
                native_criteria: bool) -> list:
         """
         Update data in mongodb
+
         :param schema: schema (name of collection in mongodb)
+        :type schema: str
+
         :param data: data to store in dictionary format
+        :type data: dict
+
         :param conditions: conditions to search (tuple of tuple)
+        :type conditions: tuple
+
         :param criteria: criteria from mongodb
+        :type criteria: str
+
         :param native_criteria: boolean for search by native criteria from mongodb
+        :type native_criteria: bool
+
         :return: list of dictionary with number of updated elements
+        :rtype: list
         """
 
         output_list = list()
 
         try:
             # Get collection from mongodb
-            mongo_collect = self._get_collect(schema)
+            mongo_collect = self._get_collection(schema)
 
             # Change _id to ObjectId because mongodb needs it
             mongo_data = AccessDatabaseMongoDB._create_mongo_data(data)
+            mongo_data_update = {AccessDatabaseMongoDB.MONGO_UPDATE_OPERATOR: mongo_data}
 
             # Get criteria in mongodb language
             mongo_criteria = AccessDatabaseMongoDB._create_mongo_criteria(conditions, criteria, native_criteria)
 
-            # Update elements and recover number of updated elements
-            mongo_result = mongo_collect.update_many(mongo_criteria, {'$set': mongo_data}).modified_count
+            # Update elements and recover number of updated elements and number of matched elements
+            mongo_result = mongo_collect.update_many(mongo_criteria, mongo_data_update)
+            modified_count = mongo_result.modified_count
+            matched_count = mongo_result.matched_count
 
             # Add number of updated elements
-            output_list.append({'modified_count': mongo_result})
+            output_list.append({'modified_count': modified_count, 'matched_count': matched_count})
 
         except Exception as e:
             raise DatabaseObjectException(ErrorMessages.PUT_ERROR + str(e))
@@ -150,42 +173,53 @@ class AccessDatabaseMongoDB(AccessDatabase):
     def remove(self, schema: str, conditions: tuple, criteria: str, native_criteria: bool) -> list:
         """
         Delete elements from mongodb
+
         :param schema: schema (name of collection in mongodb)
+        :type schema: str
+
         :param conditions: conditions to search (tuple of tuple)
+        :type conditions: tuple
+
         :param criteria: criteria from mongodb
+        :type criteria: str
+
         :param native_criteria: boolean for search by native criteria from mongodb
+        :type native_criteria: bool
+
         :return: list of dictionary with number of deleted elements
+        :rtype: list
         """
 
         output_list = list()
 
         try:
             # Get collection from mongodb
-            mongo_collect = self._get_collect(schema)
+            mongo_collect = self._get_collection(schema)
 
             # Get criteria in mongodb language
             mongo_criteria = AccessDatabaseMongoDB._create_mongo_criteria(conditions, criteria, native_criteria)
 
             # Delete elements with criteria and recover number of deleted elements
-            mongo_result = mongo_collect.delete_many(mongo_criteria).deleted_count
+            mongo_result = mongo_collect.delete_many(mongo_criteria)
+            deleted_count = mongo_result.deleted_count
 
             # Add number of deleted elements
-            output_list.append({'deleted_count': mongo_result})
+            output_list.append({'deleted_count': deleted_count})
 
         except Exception as e:
             raise DatabaseObjectException(ErrorMessages.REMOVE_ERROR + str(e))
 
         return output_list
 
-    def _get_collect(self, schema: str, create: bool = False) -> collection:
+    def _get_collection(self, schema: str, create_collection: bool = False) -> collection.Collection:
         """
         Get collection from database
 
         :param schema: collection of mongodb
         :type schema: str
 
-        :param create: create collection or not
-        :type create: bool
+        :param create_collection: create collection or not
+        :type create_collection: bool
 
         :return: collection from mongodb
         :rtype: collection
@@ -194,8 +228,10 @@ class AccessDatabaseMongoDB(AccessDatabase):
         # If collection exists, get it. Else create it
         if schema in self.db.collection_names():
             mongo_collect = self.db[schema]
-        elif create:
+        elif create_collection:
             mongo_collect = self.db.create_collection(schema)
+            mongo_collect.create_index([(AccessDatabase.TIMESTAMP_FIELD, ASCENDING)],
+                                       name=AccessDatabase.TIMESTAMP_FIELD, unique=True)
         else:
             raise DatabaseObjectException(ErrorMessages.SCHEMA_ERROR + schema)
 
@@ -221,26 +257,16 @@ class AccessDatabaseMongoDB(AccessDatabase):
 
         if create_timestamp:
             timestamp = int(time.time() * 10000000)
-            mongo_data.update({AccessDatabaseMongoDB.TIMESTAMP_FIELD: timestamp})
+            mongo_data[AccessDatabaseMongoDB.TIMESTAMP_FIELD] = timestamp
         else:
             del mongo_data[AccessDatabaseMongoDB.TIMESTAMP_FIELD]
 
-        if AccessDatabaseMongoDB._is_id_empty(data):
-            del mongo_data[AccessDatabaseMongoDB.ID_FIELD]
+        del mongo_data[AccessDatabaseMongoDB.ID_FIELD]
 
         return mongo_data
 
     @staticmethod
-    def _is_id_empty(data: dict) -> bool:
-        """
-        Check if exists data in _id field in dictionary data
-        :param data: dictionary
-        :return: bool
-        """
-        return len(data[AccessDatabaseMongoDB.ID_FIELD]) == 0
-
-    @staticmethod
-    def _create_mongo_criteria(conditions: list, criteria: str, native_criteria: bool) -> dict:
+    def _create_mongo_criteria(conditions: tuple, criteria: str, native_criteria: bool) -> dict:
         """
         Create criteria native of mongodb
 
@@ -258,14 +284,14 @@ class AccessDatabaseMongoDB(AccessDatabase):
         """
 
         # Create a filter with list of empty conditions
-        mongo_criteria = {AccessDatabaseMongoDB.MONGO_AND: list()}
+        mongo_criteria = {AccessDatabaseMongoDB.MONGO_JOIN_CONDITION: list()}
 
         try:
             # Iterate all conditions to create native mongodb filter
             for condition in conditions:
 
                 if condition[0] == AccessDatabase.ID_FIELD:
-                    if isinstance(condition[2], collections.Iterable):
+                    if isinstance(condition[2], list):
                         value_compare = [AccessDatabaseMongoDB._str_to_mongoid(element) for element in condition[2]]
                     else:
                         value_compare = AccessDatabaseMongoDB._str_to_mongoid(condition[2])
@@ -273,13 +299,13 @@ class AccessDatabaseMongoDB(AccessDatabase):
                     value_compare = condition[2]
 
                 # Add condition translated to mongodb filter language
-                mongo_criteria[AccessDatabaseMongoDB.MONGO_AND].append(
+                mongo_criteria[AccessDatabaseMongoDB.MONGO_JOIN_CONDITION].append(
                     {condition[0]: {AccessDatabaseMongoDB.MONGO_OPERATORS[condition[1]]: value_compare}}
                 )
 
             # Only if native criteria is active, add native from user
             if native_criteria and len(criteria) > 0:
-                mongo_criteria[AccessDatabaseMongoDB.MONGO_AND].append(dict(criteria))
+                mongo_criteria[AccessDatabaseMongoDB.MONGO_JOIN_CONDITION].append(dict(criteria))
 
         except Exception as e:
             raise DatabaseObjectException(ErrorMessages.CRITERIA_ERROR + str(e))
@@ -287,9 +313,10 @@ class AccessDatabaseMongoDB(AccessDatabase):
         return mongo_criteria
 
     @staticmethod
-    def _str_to_mongoid(str_id: str) -> ObjectId:
+    def _str_to_mongoid(str_id: str) -> collection.ObjectId:
         """
         Create mongo_id from str_id
+
         :param str_id: id of the object in string format
         :type str_id: str
 
@@ -299,15 +326,15 @@ class AccessDatabaseMongoDB(AccessDatabase):
 
         try:
             # Generate ObjectId from hex of the input string
-            mongo_id = ObjectId(bytes.fromhex(str_id))
+            mongo_id = collection.ObjectId(bytes.fromhex(str_id))
 
-        except (InvalidId, ValueError) as e:
+        except (errors.InvalidId, ValueError) as e:
             raise DatabaseObjectException(ErrorMessages.ID_ERROR + str(e))
 
         return mongo_id
 
     @staticmethod
-    def _mongoid_to_str(mongo_id: ObjectId) -> str:
+    def _mongoid_to_str(mongo_id: collection.ObjectId) -> str:
         """
         Generate str_id from mongo_id
 
