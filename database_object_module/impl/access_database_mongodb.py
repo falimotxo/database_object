@@ -1,6 +1,4 @@
-import collections
 import time
-import ast
 
 from pymongo import MongoClient, collection, errors, ASCENDING
 
@@ -81,10 +79,10 @@ class AccessDatabaseMongoDB(AccessDatabase):
                 element[AccessDatabaseMongoDB.ID_FIELD] = str_id
                 output_list.append(element)
 
+            return output_list
+
         except Exception as e:
             raise DatabaseObjectException(ErrorMessages.GET_ERROR + str(e))
-
-        return output_list
 
     def put(self, schema: str, data: dict) -> list:
         """
@@ -117,10 +115,10 @@ class AccessDatabaseMongoDB(AccessDatabase):
             str_id = AccessDatabaseMongoDB._mongoid_to_str(mongo_id)
             output_list.append({AccessDatabaseMongoDB.ID_FIELD: str_id})
 
+            return output_list
+
         except Exception as e:
             raise DatabaseObjectException(ErrorMessages.PUT_ERROR + str(e))
-
-        return output_list
 
     def update(self, schema: str, data: dict, conditions: tuple, criteria: str,
                native_criteria: bool) -> list:
@@ -167,10 +165,10 @@ class AccessDatabaseMongoDB(AccessDatabase):
             # Add number of updated elements
             output_list.append({'modified_count': modified_count, 'matched_count': matched_count})
 
+            return output_list
+
         except Exception as e:
             raise DatabaseObjectException(ErrorMessages.PUT_ERROR + str(e))
-
-        return output_list
 
     def remove(self, schema: str, conditions: tuple, criteria: str, native_criteria: bool) -> list:
         """
@@ -208,10 +206,10 @@ class AccessDatabaseMongoDB(AccessDatabase):
             # Add number of deleted elements
             output_list.append({'deleted_count': deleted_count})
 
+            return output_list
+
         except Exception as e:
             raise DatabaseObjectException(ErrorMessages.REMOVE_ERROR + str(e))
-
-        return output_list
 
     def _get_collection(self, schema: str, create_collection: bool = False) -> collection.Collection:
         """
@@ -293,17 +291,10 @@ class AccessDatabaseMongoDB(AccessDatabase):
             for condition in conditions:
 
                 if condition[0] == AccessDatabase.ID_FIELD:
-                    if isinstance(condition[2], str):
-                        value_compare_collection = (condition[2]),
-                    elif not isinstance(condition[2], tuple):
-                        value_compare_collection = tuple(ast.literal_eval(condition[2]))
-
-                    value_compare = [AccessDatabaseMongoDB._str_to_mongoid(element) for element in value_compare_collection]
-
-                    # if isinstance(condition[2], collections.Iterable):
-                    #     value_compare = [AccessDatabaseMongoDB._str_to_mongoid(element) for element in condition[2]]
-                    # else:
-                    #     value_compare = AccessDatabaseMongoDB._str_to_mongoid(condition[2])
+                    if isinstance(condition[2], list):
+                        value_compare = [AccessDatabaseMongoDB._str_to_mongoid(element) for element in condition[2]]
+                    else:
+                        value_compare = AccessDatabaseMongoDB._str_to_mongoid(condition[2])
                 else:
                     value_compare = condition[2]
 
@@ -316,10 +307,10 @@ class AccessDatabaseMongoDB(AccessDatabase):
             if native_criteria and len(criteria) > 0:
                 mongo_criteria[AccessDatabaseMongoDB.MONGO_JOIN_CONDITION].append(dict(criteria))
 
+            return mongo_criteria
+
         except Exception as e:
             raise DatabaseObjectException(ErrorMessages.CRITERIA_ERROR + str(e))
-
-        return mongo_criteria
 
     @staticmethod
     def _str_to_mongoid(str_id: str) -> collection.ObjectId:
@@ -336,11 +327,10 @@ class AccessDatabaseMongoDB(AccessDatabase):
         try:
             # Generate ObjectId from hex of the input string
             mongo_id = collection.ObjectId(bytes.fromhex(str_id))
+            return mongo_id
 
         except (errors.InvalidId, ValueError) as e:
             raise DatabaseObjectException(ErrorMessages.ID_ERROR + str(e))
-
-        return mongo_id
 
     @staticmethod
     def _mongoid_to_str(mongo_id: collection.ObjectId) -> str:

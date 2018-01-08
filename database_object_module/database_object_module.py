@@ -49,6 +49,7 @@ class DatabaseObjectModule(object):
             schema_collection = schema + '_' + object_name
             ret = self.access_db.get(schema_collection, conditions, criteria, native_criteria)
             return DatabaseObjectModule._get_data_object_result_from_json('get', object_name, result=ret)
+
         except DatabaseObjectException as e:
             return DatabaseObjectModule._get_data_object_result_from_json('get', object_name, exception=e)
 
@@ -68,6 +69,11 @@ class DatabaseObjectModule(object):
         :return: database object result with _id
         :rtype: DatabaseObjectResult
         """
+
+        # Validate data, checking that has inheritance from DatabaseObject
+        if not issubclass(data.__class__, DatabaseObject):
+            e = DatabaseObjectException(ErrorMessages.INHERITANCE_ERROR)
+            return DatabaseObjectModule._get_data_object_result_from_json('put', object_name, exception=e)
 
         return self.put(schema, object_name, data.__dict__)
 
@@ -94,6 +100,7 @@ class DatabaseObjectModule(object):
             schema_collection = schema + '_' + object_name
             ret = self.access_db.put(schema_collection, data)
             return DatabaseObjectModule._get_data_object_result_from_json('put', object_name, result=ret)
+
         except DatabaseObjectException as e:
             return DatabaseObjectModule._get_data_object_result_from_json('put', object_name, exception=e)
 
@@ -164,6 +171,7 @@ class DatabaseObjectModule(object):
             schema_collection = schema + '_' + object_name
             ret = self.access_db.update(schema_collection, data, conditions, criteria, native_criteria)
             return DatabaseObjectModule._get_data_object_result_from_json('update', object_name, result=ret)
+
         except DatabaseObjectException as e:
             return DatabaseObjectModule._get_data_object_result_from_json('update', object_name, exception=e)
 
@@ -195,6 +203,7 @@ class DatabaseObjectModule(object):
             schema_collection = schema + '_' + object_name
             ret = self.access_db.remove(schema_collection, conditions, criteria, native_criteria)
             return DatabaseObjectModule._get_data_object_result_from_json('remove', object_name, result=ret)
+
         except DatabaseObjectException as e:
             return DatabaseObjectModule._get_data_object_result_from_json('remove', object_name, exception=e)
 
@@ -227,7 +236,8 @@ class DatabaseObjectModule(object):
 
         # Detected exception. It is convenient to detect all type of exceptions
         if exception is not None:
-            return DatabaseObjectResult(DatabaseObjectResult.CODE_KO, object_name, msg=str(exception), exception=exception)
+            return DatabaseObjectResult(DatabaseObjectResult.CODE_KO, object_name, msg=str(exception),
+                                        exception=exception)
 
         if list is not None:
             if from_method in ['get', 'remove', 'update', 'put']:

@@ -1,7 +1,7 @@
+from nose.tools import assert_equal
+
 from database_object_module.data_model import DatabaseObject
 from database_object_module.database_object_module import DatabaseObjectModule
-
-from nose.tools import assert_equal, assert_true, assert_false, raises
 
 
 class DatabaseObjectTest_1(DatabaseObject):

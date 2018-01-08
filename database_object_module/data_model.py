@@ -1,4 +1,6 @@
-import ast, types
+import ast
+import types
+
 
 class DatabaseObject(object):
     """
@@ -38,18 +40,18 @@ class DatabaseObjectResult(object):
         self.exception = exception
 
     def get_object_from_data(self):
-
         # Recover list of dictionaries from string
         datas = ast.literal_eval(self.data)
 
         output = list()
         for data in datas:
             # Create empty class with obj_name as name, super with DatabaseObject and data as dictionary
-            inst = type(self.object_name, ((DatabaseObject),), data)
+            inst = type(self.object_name, (DatabaseObject,), data)
 
             # Define methods to add in this instance
             def get_id(self) -> str:
                 return self._id
+
             def get_timestamp(self) -> int:
                 return self._timestamp if hasattr(self, '_timestamp') else None
 
