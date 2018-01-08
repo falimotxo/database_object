@@ -48,12 +48,9 @@ class DatabaseObjectModule(object):
         try:
             schema_collection = schema + '_' + object_name
             ret = self.access_db.get(schema_collection, conditions, criteria, native_criteria)
-            result = DatabaseObjectModule._get_data_object_result_from_json('get', result=ret)
-
+            return DatabaseObjectModule._get_data_object_result_from_json('get', object_name, result=ret)
         except DatabaseObjectException as e:
-            result = DatabaseObjectModule._get_data_object_result_from_json('get', exception=e)
-
-        return result
+            return DatabaseObjectModule._get_data_object_result_from_json('get', object_name, exception=e)
 
     def put_object(self, schema: str, object_name: str, data: DatabaseObject) -> DatabaseObjectResult:
         """
@@ -96,12 +93,9 @@ class DatabaseObjectModule(object):
             self._validate_data(data)
             schema_collection = schema + '_' + object_name
             ret = self.access_db.put(schema_collection, data)
-            result = DatabaseObjectModule._get_data_object_result_from_json('put', result=ret)
-
+            return DatabaseObjectModule._get_data_object_result_from_json('put', object_name, result=ret)
         except DatabaseObjectException as e:
-            result = DatabaseObjectModule._get_data_object_result_from_json('put', exception=e)
-
-        return result
+            return DatabaseObjectModule._get_data_object_result_from_json('put', object_name, exception=e)
 
     def update_object(self, schema: str, object_name: str, data: DatabaseObject,
                       conditions: list = (('_id', '!=', ''),), criteria: str = '',
@@ -134,7 +128,7 @@ class DatabaseObjectModule(object):
         # Validate data, checking that has inheritance from DatabaseObject
         if not issubclass(data.__class__, DatabaseObject):
             e = DatabaseObjectException(ErrorMessages.INHERITANCE_ERROR)
-            return DatabaseObjectModule._get_data_object_result_from_json('update', exception=e)
+            return DatabaseObjectModule._get_data_object_result_from_json('update', object_name, exception=e)
 
         # This updates all object data defined in "data" attribute because we pass __dict__ to update method
         return self.update(schema, object_name, data.__dict__, conditions, criteria, native_criteria)
@@ -169,12 +163,9 @@ class DatabaseObjectModule(object):
         try:
             schema_collection = schema + '_' + object_name
             ret = self.access_db.update(schema_collection, data, conditions, criteria, native_criteria)
-            result = DatabaseObjectModule._get_data_object_result_from_json('update', result=ret)
-
+            return DatabaseObjectModule._get_data_object_result_from_json('update', object_name, result=ret)
         except DatabaseObjectException as e:
-            result = DatabaseObjectModule._get_data_object_result_from_json('update', exception=e)
-
-        return result
+            return DatabaseObjectModule._get_data_object_result_from_json('update', object_name, exception=e)
 
     def remove(self, schema: str, object_name: str, conditions: list = (('_id', '!=', ''),), criteria: str = '',
                native_criteria: bool = False) -> DatabaseObjectResult:
@@ -203,37 +194,30 @@ class DatabaseObjectModule(object):
         try:
             schema_collection = schema + '_' + object_name
             ret = self.access_db.remove(schema_collection, conditions, criteria, native_criteria)
-            result = DatabaseObjectModule._get_data_object_result_from_json('remove', result=ret)
-
+            return DatabaseObjectModule._get_data_object_result_from_json('remove', object_name, result=ret)
         except DatabaseObjectException as e:
-            result = DatabaseObjectModule._get_data_object_result_from_json('remove', exception=e)
-
-        return result
+            return DatabaseObjectModule._get_data_object_result_from_json('remove', object_name, exception=e)
 
     @staticmethod
-    def _validate_data(data: object) -> None:
+    def _validate_data(data: dict) -> None:
         """
         Check of data inherit from DatabaseObject
 
-        :param data_dict: data to check in dict format
-        :type data_dict: dict
-
-        :param data_object: data to check in object format
-        :type data_object: DatabaseObject
+        :param data: data to check
+        :type data: dict
 
         :return: This function return nothing
         :rtype: None
         """
 
-        if data is None and not isinstance(data, DatabaseObject) and not all(
-                key in data.keys() for key in vars(DatabaseObject())):
+        if not all(key in data.keys() for key in vars(DatabaseObject())):
             raise DatabaseObjectException(ErrorMessages.INHERITANCE_ERROR)
 
     @staticmethod
-    def _get_data_object_result_from_json(from_method: str, result: list = None, exception: Exception = None) \
-            -> DatabaseObjectResult:
+    def _get_data_object_result_from_json(from_method: str, object_name: str, result: list = None,
+                                          exception: Exception = None) -> DatabaseObjectResult:
         """
-        Convert data from implementated database to data object result
+        Convert data from implemented database to data object result
         :param from_method: method which has been executed
         :param result: data returned by method
         :return: database object result with information about output
@@ -243,15 +227,13 @@ class DatabaseObjectModule(object):
 
         # Detected exception. It is convenient to detect all type of exceptions
         if exception is not None:
-            return DatabaseObjectResult(DatabaseObjectResult.CODE_KO, msg=str(exception), exception=exception)
+            return DatabaseObjectResult(DatabaseObjectResult.CODE_KO, object_name, msg=str(exception), exception=exception)
 
         if list is not None:
-            if from_method in ['get', 'remove', 'update']:
-                return DatabaseObjectResult(DatabaseObjectResult.CODE_OK, data=str(result))
-            elif from_method == 'put':
-                return DatabaseObjectResult(DatabaseObjectResult.CODE_OK, data=str(result[0]))
+            if from_method in ['get', 'remove', 'update', 'put']:
+                return DatabaseObjectResult(DatabaseObjectResult.CODE_OK, object_name, data=str(result))
             else:
-                return DatabaseObjectResult(DatabaseObjectResult.CODE_KO, data='')
+                return DatabaseObjectResult(DatabaseObjectResult.CODE_KO, object_name, data='')
 
 
 class DatabaseConfigureModule(object):

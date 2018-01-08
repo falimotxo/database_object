@@ -1,3 +1,5 @@
+import ast, types
+
 class DatabaseObject(object):
     """
     Class of standard data input
@@ -27,15 +29,38 @@ class DatabaseObjectResult(object):
     CODE_OK = 'OK'
     CODE_KO = 'KO'
 
-    def __init__(self, code: str, data: str = '', msg: str = '', exception: Exception = None) -> None:
+    def __init__(self, code: str, object_name: str, data: str = '', msg: str = '', exception: Exception = None) -> None:
         self.code_list = (DatabaseObjectResult.CODE_OK, DatabaseObjectResult.CODE_KO)
         self.code = code
+        self.object_name = object_name
         self.data = data
         self.msg = msg
         self.exception = exception
 
     def get_object_from_data(self):
-        pass
+
+        # Recover list of dictionaries from string
+        datas = ast.literal_eval(self.data)
+
+        output = list()
+        for data in datas:
+            # Create empty class with obj_name as name, super with DatabaseObject and data as dictionary
+            inst = type(self.object_name, ((DatabaseObject),), data)
+
+            # Define methods to add in this instance
+            def get_id(self) -> str:
+                return self._id
+            def get_timestamp(self) -> int:
+                return self._timestamp if hasattr(self, '_timestamp') else None
+
+            # Assign method get_id to this instance
+            inst.get_id = types.MethodType(get_id, inst)
+            inst.get_timestamp = types.MethodType(get_timestamp, inst)
+
+            # Add to output
+            output.append(inst)
+
+        return output
 
 
 class DatabaseObjectException(Exception):
