@@ -48,9 +48,12 @@ class DatabaseObjectModule(object):
         try:
             schema_collection = schema + '_' + object_name
             ret = self.access_db.get(schema_collection, conditions, criteria, native_criteria)
-            return DatabaseObjectModule._get_data_object_result_from_json('get', result=ret)
+            result = DatabaseObjectModule._get_data_object_result_from_json('get', result=ret)
+
         except DatabaseObjectException as e:
-            return DatabaseObjectModule._get_data_object_result_from_json('get', exception=e)
+            result = DatabaseObjectModule._get_data_object_result_from_json('get', exception=e)
+
+        return result
 
     def put_object(self, schema: str, object_name: str, data: DatabaseObject) -> DatabaseObjectResult:
         """
@@ -93,9 +96,12 @@ class DatabaseObjectModule(object):
             self._validate_data(data)
             schema_collection = schema + '_' + object_name
             ret = self.access_db.put(schema_collection, data)
-            return DatabaseObjectModule._get_data_object_result_from_json('put', result=ret)
+            result = DatabaseObjectModule._get_data_object_result_from_json('put', result=ret)
+
         except DatabaseObjectException as e:
-            return DatabaseObjectModule._get_data_object_result_from_json('put', exception=e)
+            result = DatabaseObjectModule._get_data_object_result_from_json('put', exception=e)
+
+        return result
 
     def update_object(self, schema: str, object_name: str, data: DatabaseObject,
                       conditions: list = (('_id', '!=', ''),), criteria: str = '',
@@ -163,9 +169,12 @@ class DatabaseObjectModule(object):
         try:
             schema_collection = schema + '_' + object_name
             ret = self.access_db.update(schema_collection, data, conditions, criteria, native_criteria)
-            return DatabaseObjectModule._get_data_object_result_from_json('update', result=ret)
+            result = DatabaseObjectModule._get_data_object_result_from_json('update', result=ret)
+
         except DatabaseObjectException as e:
-            return DatabaseObjectModule._get_data_object_result_from_json('update', exception=e)
+            result = DatabaseObjectModule._get_data_object_result_from_json('update', exception=e)
+
+        return result
 
     def remove(self, schema: str, object_name: str, conditions: list = (('_id', '!=', ''),), criteria: str = '',
                native_criteria: bool = False) -> DatabaseObjectResult:
@@ -194,23 +203,30 @@ class DatabaseObjectModule(object):
         try:
             schema_collection = schema + '_' + object_name
             ret = self.access_db.remove(schema_collection, conditions, criteria, native_criteria)
-            return DatabaseObjectModule._get_data_object_result_from_json('remove', result=ret)
+            result = DatabaseObjectModule._get_data_object_result_from_json('remove', result=ret)
+
         except DatabaseObjectException as e:
-            return DatabaseObjectModule._get_data_object_result_from_json('remove', exception=e)
+            result = DatabaseObjectModule._get_data_object_result_from_json('remove', exception=e)
+
+        return result
 
     @staticmethod
-    def _validate_data(data: dict) -> None:
+    def _validate_data(data: object) -> None:
         """
         Check of data inherit from DatabaseObject
 
-        :param data: data to check
-        :type data: dict
+        :param data_dict: data to check in dict format
+        :type data_dict: dict
+
+        :param data_object: data to check in object format
+        :type data_object: DatabaseObject
 
         :return: This function return nothing
         :rtype: None
         """
 
-        if not all(key in data.keys() for key in vars(DatabaseObject())):
+        if data is None and not isinstance(data, DatabaseObject) and not all(
+                key in data.keys() for key in vars(DatabaseObject())):
             raise DatabaseObjectException(ErrorMessages.INHERITANCE_ERROR)
 
     @staticmethod
