@@ -1,5 +1,6 @@
 import collections
 import time
+import ast
 
 from bson.objectid import ObjectId, InvalidId
 from pymongo import MongoClient, collection, errors
@@ -265,10 +266,17 @@ class AccessDatabaseMongoDB(AccessDatabase):
             for condition in conditions:
 
                 if condition[0] == AccessDatabase.ID_FIELD:
-                    if isinstance(condition[2], collections.Iterable):
-                        value_compare = [AccessDatabaseMongoDB._str_to_mongoid(element) for element in condition[2]]
-                    else:
-                        value_compare = AccessDatabaseMongoDB._str_to_mongoid(condition[2])
+                    if isinstance(condition[2], str):
+                        value_compare_collection = (condition[2]),
+                    elif not isinstance(condition[2], tuple):
+                        value_compare_collection = tuple(ast.literal_eval(condition[2]))
+
+                    value_compare = [AccessDatabaseMongoDB._str_to_mongoid(element) for element in value_compare_collection]
+
+                    # if isinstance(condition[2], collections.Iterable):
+                    #     value_compare = [AccessDatabaseMongoDB._str_to_mongoid(element) for element in condition[2]]
+                    # else:
+                    #     value_compare = AccessDatabaseMongoDB._str_to_mongoid(condition[2])
                 else:
                     value_compare = condition[2]
 

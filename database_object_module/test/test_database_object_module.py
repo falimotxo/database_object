@@ -43,17 +43,16 @@ class TestDatabaseObjectModule(object):
         data = DatabaseObjectTest_1()
         schema = 'TEST'
         object_name = data.__class__.__name__
-        result_1 = self.module.put_object(schema, object_name, data)
 
-        id_1 = result_1.data['_id']
+        result_1 = self.module.put_object(schema, object_name, data)
+        inst_1 = result_1.get_object_from_data()
+        id_1 = inst_1[0].get_id()
+
         result_2 = self.module.get(schema, object_name, [('_id', '=', id_1)])
-        id_2 = result_2.data['_id']
-        # print(database_object_result1.data)
+        inst_2 = result_2.get_object_from_data()
+        id_2 = inst_2[0].get_id()
 
         assert_equal(id_1, id_2)
-
-        # self.assertEqual(id_1, id_2)
-
 
 #     def test_put_2(self) -> None:
 #         print(' Testing ' + self.__class__.__name__ + ' put 2 -> ')
