@@ -15,9 +15,15 @@ class AccessDatabaseFactory(object):
     def get_access_database(name_database: str, connection_database: str) -> AccessDatabase:
         """
         Get database connection
+
         :param name_database: name of implemented database
+        :type name_database: str
+
         :param connection_database: url connection
+        :type connection_database: str
+
         :return: connection to database
+        :rtype: AccessDatabase
         """
 
         if AccessDatabaseFactory._access_database is None:
@@ -29,9 +35,15 @@ class AccessDatabaseFactory(object):
     def _implement_database(name_database: str, connection_database: str) -> AccessDatabase:
         """
         Set implemented database
+
         :param name_database: name of implemented database
+        :type name_database: str
+
         :param connection_database: url connection
+        :type connection_database: str
+
         :return: instance of implemented database
+        :rtype: AccessDatabase
         """
 
         if name_database == 'mongodb':

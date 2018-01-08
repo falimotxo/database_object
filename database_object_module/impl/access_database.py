@@ -5,6 +5,7 @@ class AccessDatabase(object):
     """
     Abstract class to define the function header of all the access implementations to the different databases.
     """
+
     __metaclass__ = abc.ABCMeta
 
     # Field _id
