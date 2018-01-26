@@ -50,7 +50,7 @@ class DatabaseObjectResult(object):
 
             # Define methods to add in this instance
             def get_id(self) -> str:
-                return self._id
+                return self._id if hasattr(self, '_id') else ''
 
             def get_timestamp(self) -> int:
                 return self._timestamp if hasattr(self, '_timestamp') else None

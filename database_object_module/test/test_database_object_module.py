@@ -35,12 +35,23 @@ class TestDatabaseObjectModule(object):
     def setup(self):
         """This method is run once before _each_ test method is executed"""
         self.module = DatabaseObjectModule()
+        data_1 = DatabaseObjectTest_1()
+        data_2 = DatabaseObjectTest_2()
+        schema = 'TEST'
+        object_name_1 = data_1.__class__.__name__
+        object_name_2 = data_2.__class__.__name__
+        result_1 = self.module.remove(schema, object_name_1)
+        result_2 = self.module.remove(schema, object_name_2)
+        inst_1 = result_1.get_object_from_data()
+        inst_2 = result_2.get_object_from_data()
+        print('Deleted all data')
 
     def teardown(self):
         """This method is run once after _each_ test method is executed"""
 
     def test_put_1(self) -> None:
-        data = DatabaseObjectTest_1()
+        """Insercion de objeto y recuperacion por id"""
+        data = DatabaseObjectTest_2()
         schema = 'TEST'
         object_name = data.__class__.__name__
 
@@ -53,6 +64,20 @@ class TestDatabaseObjectModule(object):
         id_2 = inst_2[0].get_id()
 
         assert_equal(id_1, id_2)
+
+    def test_put_2(self) -> None:
+        """Insercion de objeto y recuperacion por atributo"""
+        data = DatabaseObjectTest_2()
+        schema = 'TEST'
+        object_name = data.__class__.__name__
+
+        self.module.put_object(schema, object_name, data)
+
+        result_2 = self.module.get(schema, object_name, [('int_arg', '=', data.int_arg)])
+        inst_2 = result_2.get_object_from_data()
+
+        assert_equal(inst_2[0].int_arg, data.int_arg)
+
 
 #     def test_put_2(self) -> None:
 #         print(' Testing ' + self.__class__.__name__ + ' put 2 -> ')

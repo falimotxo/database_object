@@ -293,15 +293,18 @@ class AccessDatabaseMongoDB(AccessDatabase):
                 if condition[0] == AccessDatabase.ID_FIELD:
                     if isinstance(condition[2], list):
                         value_compare = [AccessDatabaseMongoDB._str_to_mongoid(element) for element in condition[2]]
+                        filter = {condition[0]: {AccessDatabaseMongoDB.MONGO_OPERATORS[condition[1]]: value_compare}}
+                    elif condition[2] == '':
+                        filter = {}
                     else:
                         value_compare = AccessDatabaseMongoDB._str_to_mongoid(condition[2])
+                        filter = {condition[0]: {AccessDatabaseMongoDB.MONGO_OPERATORS[condition[1]]: value_compare}}
                 else:
                     value_compare = condition[2]
+                    filter = {condition[0]: {AccessDatabaseMongoDB.MONGO_OPERATORS[condition[1]]: value_compare}}
 
                 # Add condition translated to mongodb filter language
-                mongo_criteria[AccessDatabaseMongoDB.MONGO_JOIN_CONDITION].append(
-                    {condition[0]: {AccessDatabaseMongoDB.MONGO_OPERATORS[condition[1]]: value_compare}}
-                )
+                mongo_criteria[AccessDatabaseMongoDB.MONGO_JOIN_CONDITION].append(filter)
 
             # Only if native criteria is active, add native from user
             if native_criteria and len(criteria) > 0:
