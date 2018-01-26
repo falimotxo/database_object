@@ -4,13 +4,17 @@ from database_object_module.data_model import DatabaseObject
 from database_object_module.database_object_module import DatabaseObjectModule
 
 
-class DatabaseObjectTest_1(DatabaseObject):
+class DatabaseObjectTest1(DatabaseObject):
 
     def __init__(self) -> None:
         DatabaseObject.__init__(self)
         self.value = 1
 
-class DatabaseObjectTest_2(DatabaseObject):
+    def __repr__(self):
+        return self.__dict__
+
+
+class DatabaseObjectTest2(DatabaseObject):
 
     def __init__(self) -> None:
         DatabaseObject.__init__(self)
@@ -21,37 +25,52 @@ class DatabaseObjectTest_2(DatabaseObject):
         self.float_arg = float(7.9)
         self.dict_arg = {'key1': 'value1', 'key2': 'value2'}
 
+    def __repr__(self):
+        return self.__dict__
+
 
 class TestDatabaseObjectModule(object):
 
+    def __init__(self):
+        self.module = DatabaseObjectModule()
+
     @classmethod
     def setup_class(cls):
-        """This method is run once for each class before any tests are run"""
+        """
+        This method is run once for each class before any tests are run
+        """
 
     @classmethod
     def teardown_class(cls):
-        """This method is run once for each class _after_ all tests are run"""
+        """
+        This method is run once for each class _after_ all tests are run
+        """
 
     def setup(self):
-        """This method is run once before _each_ test method is executed"""
-        self.module = DatabaseObjectModule()
-        data_1 = DatabaseObjectTest_1()
-        data_2 = DatabaseObjectTest_2()
+        """
+        This method is run once before _each_ test method is executed
+        """
+
+        data_1 = DatabaseObjectTest1()
+        data_2 = DatabaseObjectTest2()
         schema = 'TEST'
         object_name_1 = data_1.__class__.__name__
         object_name_2 = data_2.__class__.__name__
-        result_1 = self.module.remove(schema, object_name_1)
-        result_2 = self.module.remove(schema, object_name_2)
-        inst_1 = result_1.get_object_from_data()
-        inst_2 = result_2.get_object_from_data()
+        self.module.remove(schema, object_name_1)
+        self.module.remove(schema, object_name_2)
         print('Deleted all data')
 
     def teardown(self):
-        """This method is run once after _each_ test method is executed"""
+        """
+        This method is run once after _each_ test method is executed
+        """
 
     def test_put_1(self) -> None:
-        """Insercion de objeto y recuperacion por id"""
-        data = DatabaseObjectTest_2()
+        """
+        Insercion de objeto y recuperacion por id
+        """
+
+        data = DatabaseObjectTest2()
         schema = 'TEST'
         object_name = data.__class__.__name__
 
@@ -66,8 +85,11 @@ class TestDatabaseObjectModule(object):
         assert_equal(id_1, id_2)
 
     def test_put_2(self) -> None:
-        """Insercion de objeto y recuperacion por atributo"""
-        data = DatabaseObjectTest_2()
+        """
+        Insercion de objeto y recuperacion por atributo
+        """
+
+        data = DatabaseObjectTest2()
         schema = 'TEST'
         object_name = data.__class__.__name__
 
@@ -77,7 +99,6 @@ class TestDatabaseObjectModule(object):
         inst_2 = result_2.get_object_from_data()
 
         assert_equal(inst_2[0].int_arg, data.int_arg)
-
 
 #     def test_put_2(self) -> None:
 #         print(' Testing ' + self.__class__.__name__ + ' put 2 -> ')

@@ -8,17 +8,37 @@ class DatabaseObject(object):
     """
 
     def __init__(self) -> None:
+        """
+        Constructor without parameters
+        """
+
+        # Create the internal variables ID and timestamp
         self._id = ''
         self._timestamp = None
 
     def get_id(self) -> str:
+        """
+        Get value of ID variable
+
+        :return: value of ID
+        :rtype: str
+        """
+
+        # Return the ID
         return self._id
 
     def get_timestamp(self) -> int:
         return self._timestamp
 
-    def __repr__(self):
-        # This method is used for store objects inside objects. repr must return string in dictionary format
+    def __repr__(self) -> None:
+        """
+        The function must generate a representation of the object in dictionary format
+
+        :return: This function return nothing
+        :rtype: None
+        """
+
+        # This method is used for store objects inside objects. The function must return string in dictionary format
         raise NotImplementedError(ErrorMessages.REPR_ERROR)
 
 
@@ -62,6 +82,7 @@ class DatabaseObjectResult(object):
             # Add to output
             output.append(inst)
 
+        # Return list of the objects
         return output
 
 
@@ -71,6 +92,17 @@ class DatabaseObjectException(Exception):
     """
 
     def __init__(self, msg: str = '') -> None:
+        """
+        Constructor with optional message
+
+        :param msg: optional message of the exception
+        :type msg: str
+
+        :return: This function return nothing
+        :rtype: None
+        """
+
+        # Init the father class
         Exception.__init__(self, msg)
 
 
@@ -90,5 +122,6 @@ class ErrorMessages(object):
     ID_ERROR = 'Error in the ID format '
     SCHEMA_ERROR = 'Error accessing non-existent schema '
     CRITERIA_ERROR = 'Error in action criteria '
+    DATA_ERROR = 'Error in input data '
     REPR_ERROR = 'Method __repr__ must be implemented '
     INHERITANCE_ERROR = 'Data must inherit from DatabaseObject '

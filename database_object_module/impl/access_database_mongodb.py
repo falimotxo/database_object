@@ -33,22 +33,24 @@ class AccessDatabaseMongoDB(AccessDatabase):
         :rtype: None
         """
 
+        # Init the father class
         AccessDatabase.__init__(self, connection)
 
-        # Connect with mongodb
         try:
+            # Connect with mongodb
             self.db = MongoClient(connection).get_database()
+
         except errors.ConnectionFailure as e:
             raise DatabaseObjectException(ErrorMessages.CONNECTION_ERROR + str(e))
 
-    def get(self, schema: str, conditions: tuple, criteria: str, native_criteria: bool) -> list:
+    def get(self, schema: str, conditions: list, criteria: str, native_criteria: bool) -> list:
         """
         Get data from mongodb
 
         :param schema: schema (name of collection in mongodb)
         :type schema: str
 
-        :param conditions: conditions to search (tuple of tuple)
+        :param conditions: conditions to search (list of tuple)
         :type conditions: list
 
         :param criteria: criteria from mongodb
@@ -61,6 +63,7 @@ class AccessDatabaseMongoDB(AccessDatabase):
         :rtype: list
         """
 
+        # Create the output list
         output_list = list()
 
         try:
@@ -79,6 +82,7 @@ class AccessDatabaseMongoDB(AccessDatabase):
                 element[AccessDatabaseMongoDB.ID_FIELD] = str_id
                 output_list.append(element)
 
+            # Return the list with the updated elements
             return output_list
 
         except Exception as e:
@@ -98,6 +102,7 @@ class AccessDatabaseMongoDB(AccessDatabase):
         :rtype: list
         """
 
+        # Create the output list
         output_list = list()
 
         try:
@@ -115,12 +120,13 @@ class AccessDatabaseMongoDB(AccessDatabase):
             str_id = AccessDatabaseMongoDB._mongoid_to_str(mongo_id)
             output_list.append({AccessDatabaseMongoDB.ID_FIELD: str_id})
 
+            # Return the list with the updated elements
             return output_list
 
         except Exception as e:
             raise DatabaseObjectException(ErrorMessages.PUT_ERROR + str(e))
 
-    def update(self, schema: str, data: dict, conditions: tuple, criteria: str,
+    def update(self, schema: str, data: dict, conditions: list, criteria: str,
                native_criteria: bool) -> list:
         """
         Update data in mongodb
@@ -131,8 +137,8 @@ class AccessDatabaseMongoDB(AccessDatabase):
         :param data: data to store in dictionary format
         :type data: dict
 
-        :param conditions: conditions to search (tuple of tuple)
-        :type conditions: tuple
+        :param conditions: conditions to search (list of tuple)
+        :type conditions: list
 
         :param criteria: criteria from mongodb
         :type criteria: str
@@ -144,6 +150,7 @@ class AccessDatabaseMongoDB(AccessDatabase):
         :rtype: list
         """
 
+        # Create the output list
         output_list = list()
 
         try:
@@ -165,20 +172,21 @@ class AccessDatabaseMongoDB(AccessDatabase):
             # Add number of updated elements
             output_list.append({'modified_count': modified_count, 'matched_count': matched_count})
 
+            # Return the list with the updated elements
             return output_list
 
         except Exception as e:
             raise DatabaseObjectException(ErrorMessages.PUT_ERROR + str(e))
 
-    def remove(self, schema: str, conditions: tuple, criteria: str, native_criteria: bool) -> list:
+    def remove(self, schema: str, conditions: list, criteria: str, native_criteria: bool) -> list:
         """
         Delete elements from mongodb
 
         :param schema: schema (name of collection in mongodb)
         :type schema: str
 
-        :param conditions: conditions to search (tuple of tuple)
-        :type conditions: tuple
+        :param conditions: conditions to search (list of tuple)
+        :type conditions: list
 
         :param criteria: criteria from mongodb
         :type criteria: str
@@ -190,6 +198,7 @@ class AccessDatabaseMongoDB(AccessDatabase):
         :rtype: list
         """
 
+        # Create the output list
         output_list = list()
 
         try:
@@ -206,6 +215,7 @@ class AccessDatabaseMongoDB(AccessDatabase):
             # Add number of deleted elements
             output_list.append({'deleted_count': deleted_count})
 
+            # Return the list with removed elements.
             return output_list
 
         except Exception as e:
@@ -225,16 +235,21 @@ class AccessDatabaseMongoDB(AccessDatabase):
         :rtype: collection
         """
 
-        # If collection exists, get it. Else create it
+        # If collection exists, get it.
         if schema in self.db.collection_names():
             mongo_collect = self.db[schema]
+
+        # If the function can create it, create it
         elif create_collection:
             mongo_collect = self.db.create_collection(schema)
             mongo_collect.create_index([(AccessDatabase.TIMESTAMP_FIELD, ASCENDING)],
                                        name=AccessDatabase.TIMESTAMP_FIELD, unique=True)
+
+        # In other case, throw the exception
         else:
             raise DatabaseObjectException(ErrorMessages.SCHEMA_ERROR + schema)
 
+        # Return the mongo collection
         return mongo_collect
 
     @staticmethod
@@ -252,21 +267,31 @@ class AccessDatabaseMongoDB(AccessDatabase):
         :rtype: dict
         """
 
+        # Create a dictionary with value of the input data
         mongo_data = dict()
         mongo_data.update(data)
 
-        if create_timestamp:
-            timestamp = int(time.time() * 10000000)
-            mongo_data[AccessDatabaseMongoDB.TIMESTAMP_FIELD] = timestamp
-        else:
-            del mongo_data[AccessDatabaseMongoDB.TIMESTAMP_FIELD]
+        try:
+            # Add the field timestamp if the function should do it
+            if create_timestamp:
+                timestamp = int(time.time() * 10000000)
+                mongo_data[AccessDatabaseMongoDB.TIMESTAMP_FIELD] = timestamp
 
-        del mongo_data[AccessDatabaseMongoDB.ID_FIELD]
+            # Delete timestamp in other case
+            else:
+                del mongo_data[AccessDatabaseMongoDB.TIMESTAMP_FIELD]
 
-        return mongo_data
+            # Delete ID key from mongo data, MongoDB will add this field
+            del mongo_data[AccessDatabaseMongoDB.ID_FIELD]
+
+            # Return the mongo data
+            return mongo_data
+
+        except KeyError as e:
+            raise DatabaseObjectException(ErrorMessages.DATA_ERROR + str(e))
 
     @staticmethod
-    def _create_mongo_criteria(conditions: tuple, criteria: str, native_criteria: bool) -> dict:
+    def _create_mongo_criteria(conditions: list, criteria: str, native_criteria: bool) -> dict:
         """
         Create criteria native of mongodb
 
@@ -290,26 +315,42 @@ class AccessDatabaseMongoDB(AccessDatabase):
             # Iterate all conditions to create native mongodb filter
             for condition in conditions:
 
+                # Special case if the variable is the ID
                 if condition[0] == AccessDatabase.ID_FIELD:
-                    if isinstance(condition[2], list):
+
+                    # If the value to compare is a list, one list of ObjectId must be generated
+                    if isinstance(condition[2], (list, tuple)):
                         value_compare = [AccessDatabaseMongoDB._str_to_mongoid(element) for element in condition[2]]
-                        filter = {condition[0]: {AccessDatabaseMongoDB.MONGO_OPERATORS[condition[1]]: value_compare}}
-                    elif condition[2] == '':
-                        filter = {}
+                        filter_condition = {
+                            condition[0]: {AccessDatabaseMongoDB.MONGO_OPERATORS[condition[1]]: value_compare}
+                        }
+
+                    # If the value is empty, all elements must be gotten back
+                    elif len(condition[0]) == 0:
+                        filter_condition = {}
+
+                    # Else the ObjectId  must be generated
                     else:
                         value_compare = AccessDatabaseMongoDB._str_to_mongoid(condition[2])
-                        filter = {condition[0]: {AccessDatabaseMongoDB.MONGO_OPERATORS[condition[1]]: value_compare}}
+                        filter_condition = {
+                            condition[0]: {AccessDatabaseMongoDB.MONGO_OPERATORS[condition[1]]: value_compare}
+                        }
+
+                # The rest of the variables do not have special cases
                 else:
                     value_compare = condition[2]
-                    filter = {condition[0]: {AccessDatabaseMongoDB.MONGO_OPERATORS[condition[1]]: value_compare}}
+                    filter_condition = {
+                        condition[0]: {AccessDatabaseMongoDB.MONGO_OPERATORS[condition[1]]: value_compare}
+                    }
 
                 # Add condition translated to mongodb filter language
-                mongo_criteria[AccessDatabaseMongoDB.MONGO_JOIN_CONDITION].append(filter)
+                mongo_criteria[AccessDatabaseMongoDB.MONGO_JOIN_CONDITION].append(filter_condition)
 
             # Only if native criteria is active, add native from user
             if native_criteria and len(criteria) > 0:
                 mongo_criteria[AccessDatabaseMongoDB.MONGO_JOIN_CONDITION].append(dict(criteria))
 
+            # Return the mongo criteria
             return mongo_criteria
 
         except Exception as e:
@@ -330,6 +371,8 @@ class AccessDatabaseMongoDB(AccessDatabase):
         try:
             # Generate ObjectId from hex of the input string
             mongo_id = collection.ObjectId(bytes.fromhex(str_id))
+
+            # Return the mongo ID in ObjectId format.
             return mongo_id
 
         except (errors.InvalidId, ValueError) as e:
@@ -347,4 +390,5 @@ class AccessDatabaseMongoDB(AccessDatabase):
         :rtype: str
         """
 
+        # Return the mongo ID in string format.
         return str(mongo_id)
