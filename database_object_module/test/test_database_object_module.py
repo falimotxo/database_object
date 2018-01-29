@@ -1,4 +1,4 @@
-from nose.tools import assert_equal
+from nose.tools import assert_equal, assert_true
 
 from database_object_module.data_model import DatabaseObject
 from database_object_module.database_object_module import DatabaseObjectModule
@@ -24,6 +24,15 @@ class DatabaseObjectTest2(DatabaseObject):
         self.list_arg = ['one thing', 'another thing']
         self.float_arg = float(7.9)
         self.dict_arg = {'key1': 'value1', 'key2': 'value2'}
+
+    def __repr__(self):
+        return self.__dict__
+
+
+class DatabaseObjectTestError(object):
+
+    def __init__(self) -> None:
+        self.value = 1
 
     def __repr__(self):
         return self.__dict__
@@ -65,28 +74,55 @@ class TestDatabaseObjectModule(object):
         This method is run once after _each_ test method is executed
         """
 
-    def test_put_1(self) -> None:
+    def test_put_get(self) -> None:
         """
-        Insercion de objeto y recuperacion por id
+        Insercion de objeto y recuperacion por id para verificar que se inserto correctamente
         """
 
         data = DatabaseObjectTest2()
         schema = 'TEST'
         object_name = data.__class__.__name__
 
-        result_1 = self.module.put_object(schema, object_name, data)
-        inst_1 = result_1.get_object_from_data()
-        id_1 = inst_1[0].get_id()
+        result_put = self.module.put_object(schema, object_name, data)
+        inst_put = result_put.get_object_from_data()
+        id_put = inst_put[0].get_id()
 
-        result_2 = self.module.get(schema, object_name, [('_id', '=', id_1)])
-        inst_2 = result_2.get_object_from_data()
-        id_2 = inst_2[0].get_id()
+        result_get = self.module.get(schema, object_name, [('_id', '=', id_put)])
+        inst_get = result_get.get_object_from_data()
+        id_get = inst_get[0].get_id()
 
-        assert_equal(id_1, id_2)
+        assert_equal(id_put, id_get)
 
-    def test_put_2(self) -> None:
+    def test_put_error(self) -> None:
         """
-        Insercion de objeto y recuperacion por atributo
+        Insercion de objeto y fallo al insertar
+        """
+
+        data = DatabaseObjectTestError()
+        schema = 'TEST'
+        object_name = data.__class__.__name__
+
+        result = self.module.put_object(schema, object_name, data)
+        assert_equal(result.code, 'KO')
+
+    def test_get_1(self) -> None:
+        """
+        Insercion de objeto y recuperacion fallida
+        """
+        data = DatabaseObjectTest2()
+        schema = 'TEST'
+        object_name = data.__class__.__name__
+
+        self.module.put_object(schema, object_name, data)
+
+        result_module = self.module.get(schema, object_name, [('int_arg', '=', 'wrong_value')])
+        result = result_module.get_object_from_data()
+
+        assert_true(len(result) == 0)
+
+    def test_get_2(self) -> None:
+        """
+        Insercion de objeto y recuperacion por atributo entero
         """
 
         data = DatabaseObjectTest2()
@@ -95,10 +131,111 @@ class TestDatabaseObjectModule(object):
 
         self.module.put_object(schema, object_name, data)
 
-        result_2 = self.module.get(schema, object_name, [('int_arg', '=', data.int_arg)])
-        inst_2 = result_2.get_object_from_data()
+        result_get = self.module.get(schema, object_name, [('int_arg', '=', 5)])
+        result = result_get.get_object_from_data()
 
-        assert_equal(inst_2[0].int_arg, data.int_arg)
+        assert_equal(result[0].int_arg, data.int_arg)
+
+    def test_get_3(self) -> None:
+        """
+        Insercion de objeto y recuperacion por atributo string
+        """
+
+        data = DatabaseObjectTest2()
+        schema = 'TEST'
+        object_name = data.__class__.__name__
+
+        result_put = self.module.put_object(schema, object_name, data)
+        inst_put = result_put.get_object_from_data()
+        id_put = inst_put[0].get_id()
+
+        result_get = self.module.get(schema, object_name, [('bool_arg', '=', False)])
+        inst_get = result_get.get_object_from_data()
+        id_get = inst_get[0].get_id()
+
+        assert_equal(id_put, id_get)
+
+    # def test_get_4(self) -> None:
+    #     """
+    #     Insercion de objeto y recuperacion por atributo list
+    #     """
+    #
+    #     data = DatabaseObjectTest2()
+    #     schema = 'TEST'
+    #     object_name = data.__class__.__name__
+    #
+    #     result_put = self.module.put_object(schema, object_name, data)
+    #     inst_put = result_put.get_object_from_data()
+    #     id_put = inst_put[0].get_id()
+    #
+    #     result_get = self.module.get(schema, object_name, [('str_arg', '=', 'cadena de texto')])
+    #     inst_get = result_get.get_object_from_data()
+    #     id_get = inst_get[0].get_id()
+    #
+    #     assert_equal(id_put, id_get)
+    #
+    # def test_get_5(self) -> None:
+    #     """
+    #     Insercion de objeto y recuperacion por atributo float
+    #     """
+    #
+    #     data = DatabaseObjectTest2()
+    #     schema = 'TEST'
+    #     object_name = data.__class__.__name__
+    #
+    #     result_put = self.module.put_object(schema, object_name, data)
+    #     inst_put = result_put.get_object_from_data()
+    #     id_put = inst_put[0].get_id()
+    #
+    #     result_get = self.module.get(schema, object_name, [('float_arg', '=', 7.9)])
+    #     inst_get = result_get.get_object_from_data()
+    #     id_get = inst_get[0].get_id()
+    #
+    #     assert_equal(id_put, id_get)
+    #
+    # def test_get_6(self) -> None:
+    #     """
+    #     Insercion de objeto y recuperacion por atributo dict
+    #     """
+    #
+    #     data = DatabaseObjectTest2()
+    #     schema = 'TEST'
+    #     object_name = data.__class__.__name__
+    #
+    #     result_put = self.module.put_object(schema, object_name, data)
+    #     inst_put = result_put.get_object_from_data()
+    #     id_put = inst_put[0].get_id()
+    #
+    #     result_get = self.module.get(schema, object_name, [('dict_arg', '=', {'key1': 'value1', 'key2': 'value2'})])
+    #     inst_get = result_get.get_object_from_data()
+    #     id_get = inst_get[0].get_id()
+    #
+    #     assert_equal(id_put, id_get)
+    #
+    # def test_get_7(self) -> None:
+    #     """
+    #     Insercion de objeto y recuperacion por atributos multiples
+    #     """
+    #
+    #     data = DatabaseObjectTest2()
+    #     schema = 'TEST'
+    #     object_name = data.__class__.__name__
+    #
+    #     result_put = self.module.put_object(schema, object_name, data)
+    #     inst_put = result_put.get_object_from_data()
+    #     id_put = inst_put[0].get_id()
+    #
+    #     result_get = self.module.get(schema, object_name, [('int_arg', '=', 5), ('bool_arg', '=', False), ('str_arg', '=', 'cadena de texto')])
+    #     inst_get = result_get.get_object_from_data()
+    #     id_get = inst_get[0].get_id()
+    #
+    #     assert_equal(id_put, id_get)
+
+
+
+
+
+
 
 #     def test_put_2(self) -> None:
 #         print(' Testing ' + self.__class__.__name__ + ' put 2 -> ')
