@@ -1,5 +1,4 @@
 import ast
-import types
 
 
 class DatabaseObject(object):
@@ -42,6 +41,42 @@ class DatabaseObject(object):
         raise NotImplementedError(ErrorMessages.REPR_ERROR)
 
 
+class PutData(DatabaseObject):
+    def __init__(self) -> None:
+        """
+        Constructor without parameters
+        """
+        DatabaseObject.__init__(self)
+
+    def __repr__(self):
+        return self.__dict__
+
+
+class RemoveData(DatabaseObject):
+    def __init__(self) -> None:
+        """
+        Constructor without parameters
+        """
+        DatabaseObject.__init__(self)
+        self.deleted_count = 0
+
+    def __repr__(self):
+        return self.__dict__
+
+
+class UpdateData(DatabaseObject):
+    def __init__(self) -> None:
+        """
+        Constructor without parameters
+        """
+        DatabaseObject.__init__(self)
+        self.matched_count = 0
+        self.modified_count = 0
+
+    def __repr__(self):
+        return self.__dict__
+
+
 class DatabaseObjectResult(object):
     """
     Class of standard data result
@@ -59,28 +94,45 @@ class DatabaseObjectResult(object):
         self.msg = msg
         self.exception = exception
 
-    def get_object_from_data(self):
+    def get_object_from_data(self, obj=DatabaseObject()):
         # Recover list of dictionaries from string
         datas = ast.literal_eval(self.data)
 
+        # Recover all attributes from obj and get a class
+        attrs = [i for i in obj.__dict__.keys() if i[:1] != '_']
+        attrs_set = set(attrs)
+        cls = obj.__class__
+
         output = list()
         for data in datas:
-            # Create empty class with obj_name as name, super with DatabaseObject and data as dictionary
-            inst = type(self.object_name, (DatabaseObject,), data)
 
-            # Define methods to add in this instance
-            def get_id(self) -> str:
-                return self._id if hasattr(self, '_id') else ''
+            # If user not set the class, then create a DatabaseObject instance and copy values
+            # If user set the class, then create an instance of that class and copy values, checking that exist
+            #           all attributes
+            #     If not exists all attributes, then raise exception
+            #     Else, if exist all attributes (coincidence) or that class has no attributes, then simply copy
+            #           those attributes in the new class
 
-            def get_timestamp(self) -> int:
-                return self._timestamp if hasattr(self, '_timestamp') else None
+            # Create the class
+            c = cls()
 
-            # Assign method get_id to this instance
-            inst.get_id = types.MethodType(get_id, inst)
-            inst.get_timestamp = types.MethodType(get_timestamp, inst)
+            # Check if exists all attributes (except _id and _timestamp), but not if there are no attributes
+            if len(attrs) != 0:
+                data_key_set = set(list(data))
+                data_key_set.remove('_id')
+                data_key_set.remove('_timestamp')
+                intersect = attrs_set.intersection(data_key_set)
+                attrs_eq = intersect == attrs_set
+
+                if not attrs_eq:
+                    raise DatabaseObjectException(ErrorMessages.DISTINCT_ATTRIBUTES_ERROR)
+
+            # Copy values from data to instance
+            for attr, value in data.items():
+                setattr(c, attr, value)
 
             # Add to output
-            output.append(inst)
+            output.append(c)
 
         # Return list of the objects
         return output
@@ -125,3 +177,4 @@ class ErrorMessages(object):
     DATA_ERROR = 'Error in input data '
     REPR_ERROR = 'Method __repr__ must be implemented '
     INHERITANCE_ERROR = 'Data must inherit from DatabaseObject '
+    DISTINCT_ATTRIBUTES_ERROR = 'Attributes not are the same '

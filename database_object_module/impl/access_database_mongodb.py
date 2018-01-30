@@ -326,7 +326,7 @@ class AccessDatabaseMongoDB(AccessDatabase):
                         }
 
                     # If the value is empty, all elements must be gotten back
-                    elif len(condition[0]) == 0:
+                    elif len(condition[2]) == 0:
                         filter_condition = {}
 
                     # Else the ObjectId  must be generated
