@@ -74,12 +74,12 @@ class AccessDatabaseMongoDB(AccessDatabase):
             mongo_criteria = AccessDatabaseMongoDB._create_mongo_criteria(conditions, criteria, native_criteria)
 
             # Find data with criteria
-            mongo_result = mongo_collect.find(mongo_criteria).sort(AccessDatabaseMongoDB.TIMESTAMP_FIELD)
+            mongo_result = mongo_collect.find(mongo_criteria).sort(AccessDatabase.TIMESTAMP_FIELD)
 
             # For each data: recover _id, set to data and add to output list
             for element in mongo_result:
-                str_id = AccessDatabaseMongoDB._mongoid_to_str(element[AccessDatabaseMongoDB.ID_FIELD])
-                element[AccessDatabaseMongoDB.ID_FIELD] = str_id
+                str_id = AccessDatabaseMongoDB._mongoid_to_str(element[AccessDatabase.ID_FIELD])
+                element[AccessDatabase.ID_FIELD] = str_id
                 output_list.append(element)
 
             # Return the list with the updated elements
@@ -118,7 +118,7 @@ class AccessDatabaseMongoDB(AccessDatabase):
 
             # Convert _id from ObjectId native format for _id to String, and add to output list in dictionary format
             str_id = AccessDatabaseMongoDB._mongoid_to_str(mongo_id)
-            output_list.append({AccessDatabaseMongoDB.ID_FIELD: str_id})
+            output_list.append({AccessDatabase.ID_FIELD: str_id})
 
             # Return the list with the updated elements
             return output_list
@@ -167,10 +167,9 @@ class AccessDatabaseMongoDB(AccessDatabase):
             # Update elements and recover number of updated elements and number of matched elements
             mongo_result = mongo_collect.update_many(mongo_criteria, mongo_data_update)
             modified_count = mongo_result.modified_count
-            matched_count = mongo_result.matched_count
 
             # Add number of updated elements
-            output_list.append({'modified_count': modified_count, 'matched_count': matched_count})
+            output_list.append({AccessDatabase.UPDATED_COUNT: modified_count})
 
             # Return the list with the updated elements
             return output_list
@@ -213,7 +212,7 @@ class AccessDatabaseMongoDB(AccessDatabase):
             deleted_count = mongo_result.deleted_count
 
             # Add number of deleted elements
-            output_list.append({'deleted_count': deleted_count})
+            output_list.append({AccessDatabase.DELETED_COUNT: deleted_count})
 
             # Return the list with removed elements.
             return output_list
@@ -275,14 +274,14 @@ class AccessDatabaseMongoDB(AccessDatabase):
             # Add the field timestamp if the function should do it
             if create_timestamp:
                 timestamp = int(time.time() * 10000000)
-                mongo_data[AccessDatabaseMongoDB.TIMESTAMP_FIELD] = timestamp
+                mongo_data[AccessDatabase.TIMESTAMP_FIELD] = timestamp
 
             # Delete timestamp in other case
             else:
-                del mongo_data[AccessDatabaseMongoDB.TIMESTAMP_FIELD]
+                del mongo_data[AccessDatabase.TIMESTAMP_FIELD]
 
             # Delete ID key from mongo data, MongoDB will add this field
-            del mongo_data[AccessDatabaseMongoDB.ID_FIELD]
+            del mongo_data[AccessDatabase.ID_FIELD]
 
             # Return the mongo data
             return mongo_data

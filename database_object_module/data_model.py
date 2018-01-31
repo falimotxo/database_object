@@ -1,4 +1,5 @@
 import ast
+from database_object_module.impl.access_database import AccessDatabase
 
 
 class DatabaseObject(object):
@@ -11,9 +12,11 @@ class DatabaseObject(object):
         Constructor without parameters
         """
 
-        # Create the internal variables ID and timestamp
+        # Create internal variables
         self._id = ''
         self._timestamp = None
+        self._deleted_count = 0
+        self._updated_count = 0
 
     def get_id(self) -> str:
         """
@@ -29,6 +32,12 @@ class DatabaseObject(object):
     def get_timestamp(self) -> int:
         return self._timestamp
 
+    def get_deleted_count(self) -> int:
+        return self._deleted_count
+
+    def get_updated_count(self) -> int:
+        return self._updated_count
+
     def __repr__(self) -> None:
         """
         The function must generate a representation of the object in dictionary format
@@ -39,42 +48,6 @@ class DatabaseObject(object):
 
         # This method is used for store objects inside objects. The function must return string in dictionary format
         raise NotImplementedError(ErrorMessages.REPR_ERROR)
-
-
-class PutData(DatabaseObject):
-    def __init__(self) -> None:
-        """
-        Constructor without parameters
-        """
-        DatabaseObject.__init__(self)
-
-    def __repr__(self):
-        return self.__dict__
-
-
-class RemoveData(DatabaseObject):
-    def __init__(self) -> None:
-        """
-        Constructor without parameters
-        """
-        DatabaseObject.__init__(self)
-        self.deleted_count = 0
-
-    def __repr__(self):
-        return self.__dict__
-
-
-class UpdateData(DatabaseObject):
-    def __init__(self) -> None:
-        """
-        Constructor without parameters
-        """
-        DatabaseObject.__init__(self)
-        self.matched_count = 0
-        self.modified_count = 0
-
-    def __repr__(self):
-        return self.__dict__
 
 
 class DatabaseObjectResult(object):
@@ -98,7 +71,7 @@ class DatabaseObjectResult(object):
         # Recover list of dictionaries from string
         datas = ast.literal_eval(self.data)
 
-        # Recover all attributes from obj and get a class
+        # Recover all attributes from obj and get a class except private attrs from python and internal variables
         attrs = [i for i in obj.__dict__.keys() if i[:1] != '_']
         attrs_set = set(attrs)
         cls = obj.__class__
@@ -116,11 +89,13 @@ class DatabaseObjectResult(object):
             # Create the class
             c = cls()
 
-            # Check if exists all attributes (except _id and _timestamp), but not if there are no attributes
+            # Check if exists all attributes (except internal variables),only if there are attributes
             if len(attrs) != 0:
                 data_key_set = set(list(data))
-                data_key_set.remove('_id')
-                data_key_set.remove('_timestamp')
+                data_key_set.remove(AccessDatabase.ID_FIELD)
+                data_key_set.remove(AccessDatabase.TIMESTAMP_FIELD)
+                data_key_set.remove(AccessDatabase.DELETED_COUNT)
+                data_key_set.remove(AccessDatabase.UPDATED_COUNT)
                 intersect = attrs_set.intersection(data_key_set)
                 attrs_eq = intersect == attrs_set
 

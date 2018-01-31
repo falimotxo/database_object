@@ -4,6 +4,7 @@ import os
 from database_object_module.data_model import DatabaseObjectResult, DatabaseObjectException, ErrorMessages, \
     DatabaseObject
 from database_object_module.impl.access_database_factory import AccessDatabaseFactory
+from database_object_module.impl.access_database import AccessDatabase
 
 
 class DatabaseObjectModule(object):
@@ -21,8 +22,8 @@ class DatabaseObjectModule(object):
         connection_database = config.get_value('connection_database')
         self.access_db = AccessDatabaseFactory.get_access_database(name_database, connection_database)
 
-    def get(self, schema: str, object_name: str, conditions: list = (('_id', '!=', ''),), criteria: str = '',
-            native_criteria: bool = False) -> DatabaseObjectResult:
+    def get(self, schema: str, object_name: str, conditions: list = ((AccessDatabase.ID_FIELD, '!=', ''),),
+            criteria: str = '', native_criteria: bool = False) -> DatabaseObjectResult:
         """
         Get data from data store
 
@@ -105,7 +106,7 @@ class DatabaseObjectModule(object):
             return DatabaseObjectModule._get_data_object_result_from_json('put', object_name, exception=e)
 
     def update_object(self, schema: str, object_name: str, data: DatabaseObject,
-                      conditions: list = (('_id', '!=', ''),), criteria: str = '',
+                      conditions: list = ((AccessDatabase.ID_FIELD, '!=', ''),), criteria: str = '',
                       native_criteria: bool = False) -> DatabaseObjectResult:
         """
         Update data in object store. This method will update all object data defined in "data" attribute
@@ -140,7 +141,8 @@ class DatabaseObjectModule(object):
         # This updates all object data defined in "data" attribute because we pass __dict__ to update method
         return self.update(schema, object_name, data.__dict__, conditions, criteria, native_criteria)
 
-    def update(self, schema: str, object_name: str, data: dict, conditions: list = (('_id,' '!=', ''),),
+    def update(self, schema: str, object_name: str, data: dict,
+               conditions: list = ((AccessDatabase.ID_FIELD, '!=', ''),),
                criteria: str = '', native_criteria: bool = False) -> DatabaseObjectResult:
         """
         Update data in object store. . This method will update only fields defined in "data" attribute
@@ -175,7 +177,8 @@ class DatabaseObjectModule(object):
         except DatabaseObjectException as e:
             return DatabaseObjectModule._get_data_object_result_from_json('update', object_name, exception=e)
 
-    def remove(self, schema: str, object_name: str, conditions: list = (('_id', '!=', ''),), criteria: str = '',
+    def remove(self, schema: str, object_name: str, conditions: list = ((AccessDatabase.ID_FIELD, '!=', ''),),
+               criteria: str = '',
                native_criteria: bool = False) -> DatabaseObjectResult:
         """
         Remove data in object store

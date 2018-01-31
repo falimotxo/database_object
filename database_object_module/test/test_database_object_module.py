@@ -1,6 +1,6 @@
 from nose.tools import assert_equal, assert_true
 
-from database_object_module.data_model import DatabaseObject, UpdateData, RemoveData, PutData
+from database_object_module.data_model import DatabaseObject
 from database_object_module.database_object_module import DatabaseObjectModule
 
 
@@ -84,7 +84,7 @@ class TestDatabaseObjectModule(object):
         object_name = data.__class__.__name__
 
         result_put = self.module.put_object(schema, object_name, data)
-        inst_put = result_put.get_object_from_data(PutData())
+        inst_put = result_put.get_object_from_data()
         id_put = inst_put[0].get_id()
 
         result_get = self.module.get(schema, object_name, [('_id', '=', id_put)])
@@ -165,7 +165,7 @@ class TestDatabaseObjectModule(object):
         object_name = data.__class__.__name__
 
         result_put = self.module.put_object(schema, object_name, data)
-        inst_put = result_put.get_object_from_data(PutData())
+        inst_put = result_put.get_object_from_data()
         id_put = inst_put[0].get_id()
 
         result_get = self.module.get(schema, object_name, [('str_arg', '=', 'cadena de texto')])
@@ -184,7 +184,7 @@ class TestDatabaseObjectModule(object):
         object_name = data.__class__.__name__
 
         result_put = self.module.put_object(schema, object_name, data)
-        inst_put = result_put.get_object_from_data(PutData())
+        inst_put = result_put.get_object_from_data()
         id_put = inst_put[0].get_id()
 
         result_get = self.module.get(schema, object_name, [('float_arg', '=', 7.9)])
@@ -203,7 +203,7 @@ class TestDatabaseObjectModule(object):
         object_name = data.__class__.__name__
 
         result_put = self.module.put_object(schema, object_name, data)
-        inst_put = result_put.get_object_from_data(PutData())
+        inst_put = result_put.get_object_from_data()
         id_put = inst_put[0].get_id()
 
         result_get = self.module.get(schema, object_name, [('list_arg', '=', ['one thing', 'another thing'])])
@@ -222,7 +222,7 @@ class TestDatabaseObjectModule(object):
         object_name = data.__class__.__name__
 
         result_put = self.module.put_object(schema, object_name, data)
-        inst_put = result_put.get_object_from_data(PutData())
+        inst_put = result_put.get_object_from_data()
         id_put = inst_put[0].get_id()
 
         result_get = self.module.get(schema, object_name, [('int_arg', '=', 5), ('bool_arg', '=', False),

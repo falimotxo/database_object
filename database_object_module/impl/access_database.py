@@ -11,8 +11,14 @@ class AccessDatabase(object):
     # Field _id
     ID_FIELD = '_id'
 
-    # # Field _timestamp
+    # Field _timestamp
     TIMESTAMP_FIELD = '_timestamp'
+
+    # Field _deleted_count
+    DELETED_COUNT = '_deleted_count'
+
+    # Field _deleted_count
+    UPDATED_COUNT = '_updated_count'
 
     def __init__(self, connection: str) -> None:
         """
