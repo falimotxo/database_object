@@ -45,6 +45,8 @@ class AccessDatabaseMongoDB(AccessDatabase):
 
         except errors.ConfigurationError as e:
             raise DatabaseObjectException(ErrorMessages.CONFIGURATION_ERROR + str(e))
+        except DatabaseObjectException as e:
+            raise(e)
 
     def get(self, schema: str, conditions: list, criteria: str, native_criteria: bool) -> list:
         """

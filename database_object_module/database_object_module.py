@@ -5,6 +5,7 @@ from database_object_module.data_model import DatabaseObjectResult, DatabaseObje
     DatabaseObject
 from database_object_module.impl.access_database_factory import AccessDatabaseFactory
 from database_object_module.impl.access_database import AccessDatabase
+from database_object_module.tools.task_thread import TaskThread
 
 
 class DatabaseObjectModule(object):
@@ -20,7 +21,16 @@ class DatabaseObjectModule(object):
         config = DatabaseConfigureModule()
         name_database = config.get_value('name_database')
         connection_database = config.get_value('connection_database')
-        self.access_db = AccessDatabaseFactory.get_access_database(name_database, connection_database)
+
+        try:
+            self.access_db = AccessDatabaseFactory.get_access_database(name_database, connection_database)
+            self.is_connected = True
+        except DatabaseObjectException as e:
+            self.is_connected = False
+
+        t = CheckConnectionThread()
+        t.start()
+        print('fin')
 
     def get(self, schema: str, object_name: str, conditions: list = ((AccessDatabase.ID_FIELD, '!=', ''),),
             criteria: str = '', native_criteria: bool = False) -> DatabaseObjectResult:
@@ -47,11 +57,16 @@ class DatabaseObjectModule(object):
         """
 
         try:
+            # Check if database is up
+            if not self.is_connected:
+                raise DatabaseObjectException(ErrorMessages.CONNECTION_ERROR)
+
             schema_collection = schema + '_' + object_name
             ret = self.access_db.get(schema_collection, conditions, criteria, native_criteria)
             return DatabaseObjectModule._get_data_object_result_from_json('get', object_name, result=ret)
 
         except DatabaseObjectException as e:
+            self.is_connected = False
             return DatabaseObjectModule._get_data_object_result_from_json('get', object_name, exception=e)
 
     def put_object(self, schema: str, object_name: str, data: DatabaseObject) -> DatabaseObjectResult:
@@ -96,6 +111,10 @@ class DatabaseObjectModule(object):
         """
 
         try:
+            # Check if database is up
+            if not self.is_connected:
+                raise DatabaseObjectException(ErrorMessages.CONNECTION_ERROR)
+
             # Validate data, checking that object has mandatory fields
             self._validate_data(data)
             schema_collection = schema + '_' + object_name
@@ -103,6 +122,7 @@ class DatabaseObjectModule(object):
             return DatabaseObjectModule._get_data_object_result_from_json('put', object_name, result=ret)
 
         except DatabaseObjectException as e:
+            self.is_connected = False
             return DatabaseObjectModule._get_data_object_result_from_json('put', object_name, exception=e)
 
     def update_object(self, schema: str, object_name: str, data: DatabaseObject,
@@ -170,11 +190,16 @@ class DatabaseObjectModule(object):
         """
 
         try:
+            # Check if database is up
+            if not self.is_connected:
+                raise DatabaseObjectException(ErrorMessages.CONNECTION_ERROR)
+
             schema_collection = schema + '_' + object_name
             ret = self.access_db.update(schema_collection, data, conditions, criteria, native_criteria)
             return DatabaseObjectModule._get_data_object_result_from_json('update', object_name, result=ret)
 
         except DatabaseObjectException as e:
+            self.is_connected = False
             return DatabaseObjectModule._get_data_object_result_from_json('update', object_name, exception=e)
 
     def remove(self, schema: str, object_name: str, conditions: list = ((AccessDatabase.ID_FIELD, '!=', ''),),
@@ -203,11 +228,17 @@ class DatabaseObjectModule(object):
         """
 
         try:
+            # Check if database is up
+            if not self.is_connected or not self.access_db._check_connection():
+                self.is_connected = False
+                raise DatabaseObjectException(ErrorMessages.CONNECTION_ERROR)
+
             schema_collection = schema + '_' + object_name
             ret = self.access_db.remove(schema_collection, conditions, criteria, native_criteria)
             return DatabaseObjectModule._get_data_object_result_from_json('remove', object_name, result=ret)
 
         except DatabaseObjectException as e:
+            self.is_connected = False
             return DatabaseObjectModule._get_data_object_result_from_json('remove', object_name, exception=e)
 
     @staticmethod
@@ -247,6 +278,12 @@ class DatabaseObjectModule(object):
                 return DatabaseObjectResult(DatabaseObjectResult.CODE_OK, object_name, data=str(result))
             else:
                 return DatabaseObjectResult(DatabaseObjectResult.CODE_KO, object_name, data='')
+
+    @staticmethod
+    def daemon_connection():
+        print('Thread')
+
+
 
 
 class DatabaseConfigureModule(object):
@@ -293,3 +330,7 @@ class DatabaseConfigureModule(object):
             return self.config[section][key]
         except Exception as e:
             raise DatabaseObjectException(ErrorMessages.KEYFILE_ERROR + str(e))
+
+class CheckConnectionThread(TaskThread):
+    def task(self):
+        print('checkConnection')

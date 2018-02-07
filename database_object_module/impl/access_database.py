@@ -1,7 +1,4 @@
 import abc
-import time
-
-from database_object_module.data_model import DatabaseObjectException, ErrorMessages
 
 
 class AccessDatabase(object):
@@ -146,24 +143,24 @@ class AccessDatabase(object):
 
         pass
 
-    def recover_connection(self, recovery_attempts: int, wait_seconds: int) -> None:
-        """
-        Check that the connection is alive and try to recover it not.
-
-        :return: this function return nothing
-        :rtype: None
-        """
-
-        current_attemps = 0
-        while not self._check_connection():
-            try:
-                self._close_database()
-                time.sleep(0.01)
-                self._connect_database()
-
-            except DatabaseObjectException:
-                current_attemps += 1
-                if current_attemps > recovery_attempts:
-                    raise DatabaseObjectException(ErrorMessages.CONNECTION_ERROR)
-
-                time.sleep(wait_seconds)
+    # def recover_connection(self, recovery_attempts: int, wait_seconds: int) -> None:
+    #     """
+    #     Check that the connection is alive and try to recover it not.
+    #
+    #     :return: this function return nothing
+    #     :rtype: None
+    #     """
+    #
+    #     current_attemps = 0
+    #     while not self._check_connection():
+    #         try:
+    #             self._close_database()
+    #             time.sleep(0.01)
+    #             self._connect_database()
+    #
+    #         except DatabaseObjectException:
+    #             current_attemps += 1
+    #             if current_attemps > recovery_attempts:
+    #                 raise DatabaseObjectException(ErrorMessages.CONNECTION_ERROR)
+    #
+    #             time.sleep(wait_seconds)

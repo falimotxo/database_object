@@ -40,14 +40,18 @@ class DatabaseObjectTestError(object):
 
 class TestDatabaseObjectModule(object):
 
+    module = None
+
     def __init__(self):
-        self.module = DatabaseObjectModule()
+        print('init del test')
+
 
     @classmethod
     def setup_class(cls):
         """
         This method is run once for each class before any tests are run
         """
+        TestDatabaseObjectModule.module = DatabaseObjectModule()
 
     @classmethod
     def teardown_class(cls):
@@ -116,7 +120,7 @@ class TestDatabaseObjectModule(object):
         self.module.put_object(schema, object_name, data)
 
         result_module = self.module.get(schema, object_name, [('int_arg', '=', 'wrong_value')])
-        result = result_module.get_object_from_data(DatabaseObjectTest2())
+        result = self.module.get_object_from_data(DatabaseObjectTest2())
 
         assert_true(len(result) == 0)
 

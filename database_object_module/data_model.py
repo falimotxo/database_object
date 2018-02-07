@@ -68,6 +68,9 @@ class DatabaseObjectResult(object):
         self.exception = exception
 
     def get_object_from_data(self, obj=DatabaseObject()):
+        if self.code == self.CODE_KO:
+            raise(DatabaseObjectException(ErrorMessages.KO_ERROR))
+
         # Recover list of dictionaries from string
         datas = ast.literal_eval(self.data)
 
@@ -153,3 +156,4 @@ class ErrorMessages(object):
     REPR_ERROR = 'Method __repr__ must be implemented '
     INHERITANCE_ERROR = 'Data must inherit from DatabaseObject '
     DISTINCT_ATTRIBUTES_ERROR = 'Attributes not are the same '
+    KO_ERROR = 'KO error '
