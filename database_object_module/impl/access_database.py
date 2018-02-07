@@ -1,4 +1,7 @@
 import abc
+import time
+
+from database_object_module.data_model import DatabaseObjectException, ErrorMessages
 
 
 class AccessDatabase(object):
@@ -20,18 +23,19 @@ class AccessDatabase(object):
     # Field _deleted_count
     UPDATED_COUNT = '_updated_count'
 
-    def __init__(self, connection: str) -> None:
+    def __init__(self, connection_url: str) -> None:
         """
         Builder method of the class.
 
-        :param connection: name of the connection with the database
-        :type connection: str
+        :param connection_url: name of the connection with the database
+        :type connection_url: str
 
         :return: this function return nothing
         :rtype: None
         """
 
-        self.connection = connection
+        self.connection = None
+        self.connection_url = connection_url
 
     @abc.abstractmethod
     def get(self, schema: str, conditions: list, criteria: str, native_criteria: bool) -> list:
@@ -52,6 +56,7 @@ class AccessDatabase(object):
 
         :return: list of objects gotten as a dictionary
         :rtype: list of dictionary
+
         """
         pass
 
@@ -69,6 +74,7 @@ class AccessDatabase(object):
         :return: list with inserted _id
         :rtype: list of dictionary
         """
+
         pass
 
     @abc.abstractmethod
@@ -95,12 +101,13 @@ class AccessDatabase(object):
         :return: number of updated elements in a list of dictionary
         :rtype: list of dictionary
         """
+
         pass
 
     @abc.abstractmethod
     def remove(self, schema: str, conditions: list, criteria: str, native_criteria: bool) -> list:
         """
-        Update the object from the database.
+        Remove the objects from the database.
 
         :param schema: name of schema of the database
         :type schema: str
@@ -117,4 +124,46 @@ class AccessDatabase(object):
         :return: number of removed elements in a list of dictionary
         :rtype: list of dictionary
         """
+
         pass
+
+    @abc.abstractclassmethod
+    def _connect_database(self) -> None:
+        pass
+
+    @abc.abstractclassmethod
+    def _close_database(self) -> None:
+        pass
+
+    @abc.abstractclassmethod
+    def _check_connection(self) -> bool:
+        """
+        Check that the connection is alive.
+
+        :return:
+        :rtype: None
+        """
+
+        pass
+
+    def recover_connection(self, recovery_attempts: int, wait_seconds: int) -> None:
+        """
+        Check that the connection is alive and try to recover it not.
+
+        :return: this function return nothing
+        :rtype: None
+        """
+
+        current_attemps = 0
+        while not self._check_connection():
+            try:
+                self._close_database()
+                time.sleep(0.01)
+                self._connect_database()
+
+            except DatabaseObjectException:
+                current_attemps += 1
+                if current_attemps > recovery_attempts:
+                    raise DatabaseObjectException(ErrorMessages.CONNECTION_ERROR)
+
+                time.sleep(wait_seconds)

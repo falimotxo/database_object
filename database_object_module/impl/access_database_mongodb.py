@@ -22,26 +22,29 @@ class AccessDatabaseMongoDB(AccessDatabase):
     # Mongo update operators
     MONGO_UPDATE_OPERATOR = '$set'
 
-    def __init__(self, connection: str) -> None:
+    def __init__(self, connection_url: str) -> None:
         """
         Constructor with url connection
 
-        :param connection: url connection from ini file
-        :type connection: str
+        :param connection_url: url connection from ini file
+        :type connection_url: str
 
         :return: This function return nothing
         :rtype: None
         """
 
         # Init the father class
-        AccessDatabase.__init__(self, connection)
+        AccessDatabase.__init__(self, connection_url)
 
         try:
             # Connect with mongodb
-            self.db = MongoClient(connection).get_database()
+            self._connect_database()
 
-        except errors.ConnectionFailure as e:
-            raise DatabaseObjectException(ErrorMessages.CONNECTION_ERROR + str(e))
+            # Get database from URL connection
+            self.db = self.connection.get_database()
+
+        except errors.ConfigurationError as e:
+            raise DatabaseObjectException(ErrorMessages.CONFIGURATION_ERROR + str(e))
 
     def get(self, schema: str, conditions: list, criteria: str, native_criteria: bool) -> list:
         """
@@ -219,6 +222,43 @@ class AccessDatabaseMongoDB(AccessDatabase):
 
         except Exception as e:
             raise DatabaseObjectException(ErrorMessages.REMOVE_ERROR + str(e))
+
+    def _connect_database(self) -> None:
+        """
+        Get the connection whith mongodb and check that it is successful.
+
+        :return: object that represents the connection
+        :rtype: object
+        """
+
+        try:
+            self.connection = MongoClient(self.connection_url)
+            self.connection.is_mongos
+
+        except errors.ConnectionFailure as e:
+            raise DatabaseObjectException(ErrorMessages.CONNECTION_ERROR + str(e))
+
+    def _close_database(self):
+        self.connection.close()
+
+    def _check_connection(self) -> bool:
+        """
+        Check that the connection with mongodb is alive, try to connect if not.
+
+        :return: true if the connection is alive, false if not
+        :rtype: bool
+        """
+
+        try:
+            # Check the connection by checking the databases
+            self.connection.list_database_names()
+
+            # Return true, the connection is alive
+            return True
+
+        except errors.ConnectionFailure:
+            # Return false, the connection is dead
+            return False
 
     def _get_collection(self, schema: str, create_collection: bool = False) -> collection.Collection:
         """
