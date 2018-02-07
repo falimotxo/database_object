@@ -125,15 +125,15 @@ class AccessDatabase(object):
         pass
 
     @abc.abstractclassmethod
-    def _connect_database(self) -> None:
+    def open_connection(self) -> None:
         pass
 
     @abc.abstractclassmethod
-    def _close_database(self) -> None:
+    def close_connection(self) -> None:
         pass
 
     @abc.abstractclassmethod
-    def _check_connection(self) -> bool:
+    def check_connection(self) -> bool:
         """
         Check that the connection is alive.
 

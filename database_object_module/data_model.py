@@ -59,15 +59,15 @@ class DatabaseObjectResult(object):
     CODE_OK = 'OK'
     CODE_KO = 'KO'
 
-    def __init__(self, code: str, object_name: str, data: str = '', msg: str = '', exception: Exception = None) -> None:
+    def __init__(self, code: str, data: str = '', msg: str = '', exception: Exception = None) -> None:
         self.code_list = (DatabaseObjectResult.CODE_OK, DatabaseObjectResult.CODE_KO)
         self.code = code
-        self.object_name = object_name
         self.data = data
         self.msg = msg
         self.exception = exception
 
     def get_object_from_data(self, obj=DatabaseObject()):
+
         if self.code == self.CODE_KO:
             raise(DatabaseObjectException(ErrorMessages.KO_ERROR))
 

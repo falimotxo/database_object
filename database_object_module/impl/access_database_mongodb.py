@@ -1,6 +1,7 @@
 import time
 
 from pymongo import MongoClient, collection, errors, ASCENDING
+from pymongo.errors import ServerSelectionTimeoutError
 
 from database_object_module.data_model import DatabaseObjectException, ErrorMessages
 from database_object_module.impl.access_database import AccessDatabase
@@ -38,7 +39,7 @@ class AccessDatabaseMongoDB(AccessDatabase):
 
         try:
             # Connect with mongodb
-            self._connect_database()
+            self.open_connection()
 
             # Get database from URL connection
             self.db = self.connection.get_database()
@@ -46,7 +47,7 @@ class AccessDatabaseMongoDB(AccessDatabase):
         except errors.ConfigurationError as e:
             raise DatabaseObjectException(ErrorMessages.CONFIGURATION_ERROR + str(e))
         except DatabaseObjectException as e:
-            raise(e)
+            raise e
 
     def get(self, schema: str, conditions: list, criteria: str, native_criteria: bool) -> list:
         """
@@ -90,6 +91,8 @@ class AccessDatabaseMongoDB(AccessDatabase):
             # Return the list with the updated elements
             return output_list
 
+        except ServerSelectionTimeoutError:
+            raise DatabaseObjectException(ErrorMessages.CONNECTION_ERROR)
         except Exception as e:
             raise DatabaseObjectException(ErrorMessages.GET_ERROR + str(e))
 
@@ -128,6 +131,8 @@ class AccessDatabaseMongoDB(AccessDatabase):
             # Return the list with the updated elements
             return output_list
 
+        except ServerSelectionTimeoutError:
+            raise DatabaseObjectException(ErrorMessages.CONNECTION_ERROR)
         except Exception as e:
             raise DatabaseObjectException(ErrorMessages.PUT_ERROR + str(e))
 
@@ -179,6 +184,8 @@ class AccessDatabaseMongoDB(AccessDatabase):
             # Return the list with the updated elements
             return output_list
 
+        except ServerSelectionTimeoutError:
+            raise DatabaseObjectException(ErrorMessages.CONNECTION_ERROR)
         except Exception as e:
             raise DatabaseObjectException(ErrorMessages.PUT_ERROR + str(e))
 
@@ -222,45 +229,10 @@ class AccessDatabaseMongoDB(AccessDatabase):
             # Return the list with removed elements.
             return output_list
 
+        except ServerSelectionTimeoutError:
+            raise DatabaseObjectException(ErrorMessages.CONNECTION_ERROR)
         except Exception as e:
             raise DatabaseObjectException(ErrorMessages.REMOVE_ERROR + str(e))
-
-    def _connect_database(self) -> None:
-        """
-        Get the connection whith mongodb and check that it is successful.
-
-        :return: object that represents the connection
-        :rtype: object
-        """
-
-        try:
-            self.connection = MongoClient(self.connection_url)
-            self.connection.is_mongos
-
-        except errors.ConnectionFailure as e:
-            raise DatabaseObjectException(ErrorMessages.CONNECTION_ERROR + str(e))
-
-    def _close_database(self):
-        self.connection.close()
-
-    def _check_connection(self) -> bool:
-        """
-        Check that the connection with mongodb is alive, try to connect if not.
-
-        :return: true if the connection is alive, false if not
-        :rtype: bool
-        """
-
-        try:
-            # Check the connection by checking the databases
-            self.connection.list_database_names()
-
-            # Return true, the connection is alive
-            return True
-
-        except errors.ConnectionFailure:
-            # Return false, the connection is dead
-            return False
 
     def _get_collection(self, schema: str, create_collection: bool = False) -> collection.Collection:
         """
@@ -292,6 +264,43 @@ class AccessDatabaseMongoDB(AccessDatabase):
 
         # Return the mongo collection
         return mongo_collect
+
+    def open_connection(self) -> None:
+        """
+        Get the connection whith mongodb and check that it is successful.
+
+        :return: object that represents the connection
+        :rtype: object
+        """
+
+        try:
+            self.connection = MongoClient(self.connection_url)
+            self.connection.is_mongos
+
+        except (errors.ConnectionFailure, errors.ServerSelectionTimeoutError):
+            raise DatabaseObjectException(ErrorMessages.CONNECTION_ERROR)
+
+    def close_connection(self):
+        self.connection.close()
+
+    def check_connection(self) -> bool:
+        """
+        Check that the connection with mongodb is alive, try to connect if not.
+
+        :return: true if the connection is alive, false if not
+        :rtype: bool
+        """
+
+        try:
+            # Check the connection by checking the databases
+            self.connection.list_database_names()
+
+            # Return true, the connection is alive
+            return True
+
+        except errors.ConnectionFailure:
+            # Return false, the connection is dead
+            return False
 
     @staticmethod
     def _create_mongo_data(data: dict, create_timestamp: bool = False) -> dict:
@@ -433,6 +442,3 @@ class AccessDatabaseMongoDB(AccessDatabase):
 
         # Return the mongo ID in string format.
         return str(mongo_id)
-
-
-

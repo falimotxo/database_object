@@ -1,5 +1,6 @@
 import configparser
 import os
+import time
 
 from database_object_module.data_model import DatabaseObjectResult, DatabaseObjectException, ErrorMessages, \
     DatabaseObject
@@ -25,14 +26,17 @@ class DatabaseObjectModule(object):
         try:
             self.access_db = AccessDatabaseFactory.get_access_database(name_database, connection_database)
             self.is_connected = True
-        except DatabaseObjectException as e:
+        except DatabaseObjectException:
             self.is_connected = False
 
-        t = CheckConnectionThread()
-        t.start()
-        print('fin')
+        self.daemon = CheckConnectionThread(self)
+        self.daemon.dom = self
+        self.daemon.start()
 
-    def get(self, schema: str, object_name: str, conditions: list = ((AccessDatabase.ID_FIELD, '!=', ''),),
+    def exit(self):
+        self.daemon.shutdown()
+
+    def get(self, schema: str, sub_schema: str, conditions: list = ((AccessDatabase.ID_FIELD, '!=', ''),),
             criteria: str = '', native_criteria: bool = False) -> DatabaseObjectResult:
         """
         Get data from data store
@@ -40,8 +44,8 @@ class DatabaseObjectModule(object):
         :param schema: connection schema
         :type schema: str
 
-        :param object_name: object type to save
-        :type object_name: str
+        :param sub_schema: object type to save
+        :type sub_schema: str
 
         :param conditions: list of tuple conditions
         :type conditions: list
@@ -61,23 +65,25 @@ class DatabaseObjectModule(object):
             if not self.is_connected:
                 raise DatabaseObjectException(ErrorMessages.CONNECTION_ERROR)
 
-            schema_collection = schema + '_' + object_name
+            schema_collection = DatabaseObjectModule._get_schema_collection(schema, sub_schema)
             ret = self.access_db.get(schema_collection, conditions, criteria, native_criteria)
-            return DatabaseObjectModule._get_data_object_result_from_json('get', object_name, result=ret)
+            return DatabaseObjectModule._get_data_object_result_from_json('get', result=ret)
 
         except DatabaseObjectException as e:
-            self.is_connected = False
-            return DatabaseObjectModule._get_data_object_result_from_json('get', object_name, exception=e)
+            # Set false only if socket timeout exception and if another process has not set it to false
+            if str(e) == ErrorMessages.CONNECTION_ERROR and self.is_connected:
+                self.is_connected = False
+            return DatabaseObjectModule._get_data_object_result_from_json('get', exception=e)
 
-    def put_object(self, schema: str, object_name: str, data: DatabaseObject) -> DatabaseObjectResult:
+    def put_object(self, schema: str, sub_schema: str, data: DatabaseObject) -> DatabaseObjectResult:
         """
         Write object to object store
 
         :param schema: connection schema
         :type schema: str
 
-        :param object_name: object type to save
-        :type object_name: str
+        :param sub_schema: object type to save
+        :type sub_schema: str
 
         :param data: data to save
         :type data: DatabaseObject
@@ -89,19 +95,19 @@ class DatabaseObjectModule(object):
         # Validate data, checking that has inheritance from DatabaseObject
         if not issubclass(data.__class__, DatabaseObject):
             e = DatabaseObjectException(ErrorMessages.INHERITANCE_ERROR)
-            return DatabaseObjectModule._get_data_object_result_from_json('put', object_name, exception=e)
+            return DatabaseObjectModule._get_data_object_result_from_json('put', exception=e)
 
-        return self.put(schema, object_name, data.__dict__)
+        return self.put(schema, sub_schema, data.__dict__)
 
-    def put(self, schema: str, object_name: str, data: dict) -> DatabaseObjectResult:
+    def put(self, schema: str, sub_schema: str, data: dict) -> DatabaseObjectResult:
         """
         Write object to object store
 
         :param schema: connection schema
         :type schema: str
 
-        :param object_name: object type to save
-        :type object_name: str
+        :param sub_schema: object type to save
+        :type sub_schema: str
 
         :param data: data to save
         :type data: dict
@@ -117,15 +123,17 @@ class DatabaseObjectModule(object):
 
             # Validate data, checking that object has mandatory fields
             self._validate_data(data)
-            schema_collection = schema + '_' + object_name
+            schema_collection = DatabaseObjectModule._get_schema_collection(schema, sub_schema)
             ret = self.access_db.put(schema_collection, data)
-            return DatabaseObjectModule._get_data_object_result_from_json('put', object_name, result=ret)
+            return DatabaseObjectModule._get_data_object_result_from_json('put', result=ret)
 
         except DatabaseObjectException as e:
-            self.is_connected = False
-            return DatabaseObjectModule._get_data_object_result_from_json('put', object_name, exception=e)
+            # Set false only if socket timeout exception and if another process has not set it to false
+            if str(e) == ErrorMessages.CONNECTION_ERROR and self.is_connected:
+                self.is_connected = False
+            return DatabaseObjectModule._get_data_object_result_from_json('put', exception=e)
 
-    def update_object(self, schema: str, object_name: str, data: DatabaseObject,
+    def update_object(self, schema: str, sub_schema: str, data: DatabaseObject,
                       conditions: list = ((AccessDatabase.ID_FIELD, '!=', ''),), criteria: str = '',
                       native_criteria: bool = False) -> DatabaseObjectResult:
         """
@@ -134,8 +142,8 @@ class DatabaseObjectModule(object):
         :param schema: connection schema
         :type schema: str
 
-        :param object_name: object type to save
-        :type object_name: str
+        :param sub_schema: object type to save
+        :type sub_schema: str
 
         :param data: data to update
         :type data: DatabaseObject
@@ -156,12 +164,12 @@ class DatabaseObjectModule(object):
         # Validate data, checking that has inheritance from DatabaseObject
         if not issubclass(data.__class__, DatabaseObject):
             e = DatabaseObjectException(ErrorMessages.INHERITANCE_ERROR)
-            return DatabaseObjectModule._get_data_object_result_from_json('update', object_name, exception=e)
+            return DatabaseObjectModule._get_data_object_result_from_json('update', exception=e)
 
         # This updates all object data defined in "data" attribute because we pass __dict__ to update method
-        return self.update(schema, object_name, data.__dict__, conditions, criteria, native_criteria)
+        return self.update(schema, sub_schema, data.__dict__, conditions, criteria, native_criteria)
 
-    def update(self, schema: str, object_name: str, data: dict,
+    def update(self, schema: str, sub_schema: str, data: dict,
                conditions: list = ((AccessDatabase.ID_FIELD, '!=', ''),),
                criteria: str = '', native_criteria: bool = False) -> DatabaseObjectResult:
         """
@@ -170,8 +178,8 @@ class DatabaseObjectModule(object):
         :param schema: connection schema
         :type schema: str
 
-        :param object_name: object type to save
-        :type object_name: str
+        :param sub_schema: object type to save
+        :type sub_schema: str
 
         :param data: data to update
         :type data: dict
@@ -194,15 +202,17 @@ class DatabaseObjectModule(object):
             if not self.is_connected:
                 raise DatabaseObjectException(ErrorMessages.CONNECTION_ERROR)
 
-            schema_collection = schema + '_' + object_name
+            schema_collection = DatabaseObjectModule._get_schema_collection(schema, sub_schema)
             ret = self.access_db.update(schema_collection, data, conditions, criteria, native_criteria)
-            return DatabaseObjectModule._get_data_object_result_from_json('update', object_name, result=ret)
+            return DatabaseObjectModule._get_data_object_result_from_json('update', result=ret)
 
         except DatabaseObjectException as e:
-            self.is_connected = False
-            return DatabaseObjectModule._get_data_object_result_from_json('update', object_name, exception=e)
+            # Set false only if socket timeout exception and if another process has not set it to false
+            if str(e) == ErrorMessages.CONNECTION_ERROR and self.is_connected:
+                self.is_connected = False
+            return DatabaseObjectModule._get_data_object_result_from_json('update', exception=e)
 
-    def remove(self, schema: str, object_name: str, conditions: list = ((AccessDatabase.ID_FIELD, '!=', ''),),
+    def remove(self, schema: str, sub_schema: str, conditions: list = ((AccessDatabase.ID_FIELD, '!=', ''),),
                criteria: str = '',
                native_criteria: bool = False) -> DatabaseObjectResult:
         """
@@ -211,8 +221,8 @@ class DatabaseObjectModule(object):
         :param schema: connection schema
         :type schema: str
 
-        :param object_name: object type to save
-        :type object_name: str
+        :param sub_schema: object type to save
+        :type sub_schema: str
 
         :param conditions: list of tuple conditions
         :type conditions: list
@@ -229,17 +239,22 @@ class DatabaseObjectModule(object):
 
         try:
             # Check if database is up
-            if not self.is_connected or not self.access_db._check_connection():
-                self.is_connected = False
+            if not self.is_connected:
                 raise DatabaseObjectException(ErrorMessages.CONNECTION_ERROR)
 
-            schema_collection = schema + '_' + object_name
+            schema_collection = DatabaseObjectModule._get_schema_collection(schema, sub_schema)
             ret = self.access_db.remove(schema_collection, conditions, criteria, native_criteria)
-            return DatabaseObjectModule._get_data_object_result_from_json('remove', object_name, result=ret)
+            return DatabaseObjectModule._get_data_object_result_from_json('remove', result=ret)
 
         except DatabaseObjectException as e:
-            self.is_connected = False
-            return DatabaseObjectModule._get_data_object_result_from_json('remove', object_name, exception=e)
+            # Set false only if socket timeout exception and if another process has not set it to false
+            if str(e) == ErrorMessages.CONNECTION_ERROR and self.is_connected:
+                self.is_connected = False
+            return DatabaseObjectModule._get_data_object_result_from_json('remove', exception=e)
+
+    @staticmethod
+    def _get_schema_collection(schema: str, sub_schema: str) -> str:
+        return schema + '_' + sub_schema
 
     @staticmethod
     def _validate_data(data: dict) -> None:
@@ -257,7 +272,7 @@ class DatabaseObjectModule(object):
             raise DatabaseObjectException(ErrorMessages.INHERITANCE_ERROR)
 
     @staticmethod
-    def _get_data_object_result_from_json(from_method: str, object_name: str, result: list = None,
+    def _get_data_object_result_from_json(from_method: str, result: list = None,
                                           exception: Exception = None) -> DatabaseObjectResult:
         """
         Convert data from implemented database to data object result
@@ -270,20 +285,14 @@ class DatabaseObjectModule(object):
 
         # Detected exception. It is convenient to detect all type of exceptions
         if exception is not None:
-            return DatabaseObjectResult(DatabaseObjectResult.CODE_KO, object_name, msg=str(exception),
+            return DatabaseObjectResult(DatabaseObjectResult.CODE_KO, msg=str(exception),
                                         exception=exception)
 
         if list is not None:
             if from_method in ['get', 'remove', 'update', 'put']:
-                return DatabaseObjectResult(DatabaseObjectResult.CODE_OK, object_name, data=str(result))
+                return DatabaseObjectResult(DatabaseObjectResult.CODE_OK, data=str(result))
             else:
-                return DatabaseObjectResult(DatabaseObjectResult.CODE_KO, object_name, data='')
-
-    @staticmethod
-    def daemon_connection():
-        print('Thread')
-
-
+                return DatabaseObjectResult(DatabaseObjectResult.CODE_KO, data='')
 
 
 class DatabaseConfigureModule(object):
@@ -331,6 +340,26 @@ class DatabaseConfigureModule(object):
         except Exception as e:
             raise DatabaseObjectException(ErrorMessages.KEYFILE_ERROR + str(e))
 
+
 class CheckConnectionThread(TaskThread):
+
+    def __init__(self, dom: DatabaseObjectModule):
+        TaskThread.__init__(self)
+        self.dom = dom
+
     def task(self):
-        print('checkConnection')
+        if self.dom.is_connected:
+            print('esta conectado')
+            return
+
+        print('esta desconectado')
+        try:
+            self.dom.access_db.close_connection()
+            time.sleep(0.05)
+            self.dom.access_db.open_connection()
+            self.dom.is_connected = self.dom.access_db.check_connection()
+            print('conexion restaurada')
+        except:
+            print('no se pudo restaurar la conexion')
+            pass
+        print('fin checkConnection')

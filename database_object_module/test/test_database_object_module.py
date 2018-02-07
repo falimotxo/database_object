@@ -58,6 +58,7 @@ class TestDatabaseObjectModule(object):
         """
         This method is run once for each class _after_ all tests are run
         """
+        TestDatabaseObjectModule.module.exit()
 
     def setup(self):
         """
@@ -82,7 +83,7 @@ class TestDatabaseObjectModule(object):
         """
         Insercion de objeto y recuperacion por id para verificar que se inserto correctamente
         """
-
+        print('1')
         data = DatabaseObjectTest2()
         schema = 'TEST'
         object_name = data.__class__.__name__
@@ -101,7 +102,7 @@ class TestDatabaseObjectModule(object):
         """
         Insercion de objeto y fallo al insertar
         """
-
+        print('2')
         data = DatabaseObjectTestError()
         schema = 'TEST'
         object_name = data.__class__.__name__
@@ -120,7 +121,7 @@ class TestDatabaseObjectModule(object):
         self.module.put_object(schema, object_name, data)
 
         result_module = self.module.get(schema, object_name, [('int_arg', '=', 'wrong_value')])
-        result = self.module.get_object_from_data(DatabaseObjectTest2())
+        result = result_module.get_object_from_data(DatabaseObjectTest2())
 
         assert_true(len(result) == 0)
 
