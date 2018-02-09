@@ -1,12 +1,22 @@
 import configparser
 import os
 import time
+import logging
+import logging.config
 
 from database_object_module.data_model import DatabaseObjectResult, DatabaseObjectException, ErrorMessages, \
     DatabaseObject
 from database_object_module.impl.access_database_factory import AccessDatabaseFactory
 from database_object_module.impl.access_database import AccessDatabase
 from database_object_module.tools.task_thread import TaskThread
+
+BASE_PATH = os.path.dirname(__file__)
+CONFIG_FOLDER = 'etc'
+CONFIG_PATH = BASE_PATH + '/../{}/'.format(CONFIG_FOLDER)
+
+# Logging config
+logging.config.fileConfig(CONFIG_PATH + 'logging.ini')
+logger = logging.getLogger(__name__)
 
 
 class DatabaseObjectModule(object):
@@ -26,12 +36,14 @@ class DatabaseObjectModule(object):
         try:
             self.access_db = AccessDatabaseFactory.get_access_database(name_database, connection_database)
             self.is_connected = True
+            logger.info('Datastore connected')
         except DatabaseObjectException:
             self.is_connected = False
 
         self.daemon = CheckConnectionThread(self)
         self.daemon.dom = self
         self.daemon.start()
+        logger.info('CheckConnection daemon started')
 
     def exit(self):
         self.daemon.shutdown()
@@ -301,7 +313,7 @@ class DatabaseConfigureModule(object):
     """
 
     # Path configuration of file
-    PATH_CONFIGURE_FILE = '/../etc/config.ini'
+    CONFIGURE_FILE = 'config.ini'
 
     def __init__(self) -> None:
         """
@@ -309,7 +321,7 @@ class DatabaseConfigureModule(object):
         """
 
         self.config = configparser.ConfigParser()
-        self.config.read(os.path.dirname(__file__) + DatabaseConfigureModule.PATH_CONFIGURE_FILE)
+        self.config.read(CONFIG_PATH + DatabaseConfigureModule.CONFIGURE_FILE)
 
     def get_sections(self) -> list:
         """
