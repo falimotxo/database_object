@@ -1,6 +1,6 @@
 from nose.tools import assert_equal, assert_true
 
-from database_object_module.data_model import DatabaseObject
+from database_object_module.data_model import DatabaseObject, DatabaseObjectResult
 from database_object_module.database_object_module import DatabaseObjectModule
 
 
@@ -11,7 +11,10 @@ class DatabaseObjectTest1(DatabaseObject):
         self.value = 1
 
     def __repr__(self):
-        return self.__dict__
+        return str(self.__dict__)
+
+    def __str__(self):
+        return str(self.__dict__)
 
 
 class DatabaseObjectTest2(DatabaseObject):
@@ -26,7 +29,10 @@ class DatabaseObjectTest2(DatabaseObject):
         self.dict_arg = {'key1': 'value1', 'key2': 'value2'}
 
     def __repr__(self):
-        return self.__dict__
+        return str(self.__dict__)
+
+    def __str__(self):
+        return str(self.__dict__)
 
 
 class DatabaseObjectTestError(object):
@@ -35,7 +41,7 @@ class DatabaseObjectTestError(object):
         self.value = 1
 
     def __repr__(self):
-        return self.__dict__
+        return str(self.__dict__)
 
 
 class TestDatabaseObjectModule(object):
@@ -43,7 +49,7 @@ class TestDatabaseObjectModule(object):
     module = None
 
     def __init__(self):
-        print('init del test')
+        pass
 
 
     @classmethod
@@ -83,7 +89,7 @@ class TestDatabaseObjectModule(object):
         """
         Insercion de objeto y recuperacion por id para verificar que se inserto correctamente
         """
-        print('1')
+
         data = DatabaseObjectTest2()
         schema = 'TEST'
         object_name = data.__class__.__name__
@@ -102,18 +108,19 @@ class TestDatabaseObjectModule(object):
         """
         Insercion de objeto y fallo al insertar
         """
-        print('2')
+
         data = DatabaseObjectTestError()
         schema = 'TEST'
         object_name = data.__class__.__name__
 
         result = self.module.put_object(schema, object_name, data)
-        assert_equal(result.code, 'KO')
+        assert_equal(result.code, DatabaseObjectResult.CODE_KO)
 
     def test_get_1(self) -> None:
         """
         Insercion de objeto y recuperacion fallida
         """
+
         data = DatabaseObjectTest2()
         schema = 'TEST'
         object_name = data.__class__.__name__

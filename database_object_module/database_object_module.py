@@ -1,22 +1,12 @@
-import configparser
-import os
 import time
-import logging
-import logging.config
 
 from database_object_module.data_model import DatabaseObjectResult, DatabaseObjectException, ErrorMessages, \
     DatabaseObject
 from database_object_module.impl.access_database_factory import AccessDatabaseFactory
 from database_object_module.impl.access_database import AccessDatabase
 from database_object_module.tools.task_thread import TaskThread
-
-BASE_PATH = os.path.dirname(__file__)
-CONFIG_FOLDER = 'etc'
-CONFIG_PATH = BASE_PATH + '/../{}/'.format(CONFIG_FOLDER)
-
-# Logging config
-logging.config.fileConfig(CONFIG_PATH + 'logging.ini')
-logger = logging.getLogger(__name__)
+from database_object_module.tools.decorators import log_function
+from database_object_module import config, logger
 
 
 class DatabaseObjectModule(object):
@@ -29,25 +19,34 @@ class DatabaseObjectModule(object):
         Constructor that gets configuration, database name and connection instance
         """
 
-        config = DatabaseConfigureModule()
-        name_database = config.get_value('name_database')
-        connection_database = config.get_value('connection_database')
+        # global logger
+        # logger = logging.getLogger(__name__)
+        logger.info('INIT MODULE')
 
         try:
+            name_database = config.get_value('name_database')
+            connection_database = config.get_value('connection_database')
+
+            # Connect to datastore
             self.access_db = AccessDatabaseFactory.get_access_database(name_database, connection_database)
             self.is_connected = True
             logger.info('Datastore connected')
+
         except DatabaseObjectException:
+            logger.error('Error opening connection to datastore', exc_info=True)
             self.is_connected = False
 
         self.daemon = CheckConnectionThread(self)
-        self.daemon.dom = self
+        # self.daemon.dom = self
         self.daemon.start()
         logger.info('CheckConnection daemon started')
+        logger.info('Accepting requests')
 
     def exit(self):
         self.daemon.shutdown()
+        logger.info('SHUTDOWN MODULE')
 
+    @log_function(logger)
     def get(self, schema: str, sub_schema: str, conditions: list = ((AccessDatabase.ID_FIELD, '!=', ''),),
             criteria: str = '', native_criteria: bool = False) -> DatabaseObjectResult:
         """
@@ -75,6 +74,7 @@ class DatabaseObjectModule(object):
         try:
             # Check if database is up
             if not self.is_connected:
+                logger.error('Error opening connection to datastore', exc_info=True)
                 raise DatabaseObjectException(ErrorMessages.CONNECTION_ERROR)
 
             schema_collection = DatabaseObjectModule._get_schema_collection(schema, sub_schema)
@@ -82,11 +82,16 @@ class DatabaseObjectModule(object):
             return DatabaseObjectModule._get_data_object_result_from_json('get', result=ret)
 
         except DatabaseObjectException as e:
+
             # Set false only if socket timeout exception and if another process has not set it to false
             if str(e) == ErrorMessages.CONNECTION_ERROR and self.is_connected:
                 self.is_connected = False
+                logger.critical('Connection to datastore lost')
+
+            logger.error('Error recovering data from datastore', exc_info=True)
             return DatabaseObjectModule._get_data_object_result_from_json('get', exception=e)
 
+    @log_function(logger)
     def put_object(self, schema: str, sub_schema: str, data: DatabaseObject) -> DatabaseObjectResult:
         """
         Write object to object store
@@ -111,6 +116,7 @@ class DatabaseObjectModule(object):
 
         return self.put(schema, sub_schema, data.__dict__)
 
+    @log_function(logger)
     def put(self, schema: str, sub_schema: str, data: dict) -> DatabaseObjectResult:
         """
         Write object to object store
@@ -131,6 +137,7 @@ class DatabaseObjectModule(object):
         try:
             # Check if database is up
             if not self.is_connected:
+                logger.error('Error opening connection to datastore', exc_info=True)
                 raise DatabaseObjectException(ErrorMessages.CONNECTION_ERROR)
 
             # Validate data, checking that object has mandatory fields
@@ -140,11 +147,16 @@ class DatabaseObjectModule(object):
             return DatabaseObjectModule._get_data_object_result_from_json('put', result=ret)
 
         except DatabaseObjectException as e:
+
             # Set false only if socket timeout exception and if another process has not set it to false
             if str(e) == ErrorMessages.CONNECTION_ERROR and self.is_connected:
                 self.is_connected = False
+                logger.critical('Connection to datastore lost')
+
+            logger.error('Error inserting data to datastore', exc_info=True)
             return DatabaseObjectModule._get_data_object_result_from_json('put', exception=e)
 
+    @log_function(logger)
     def update_object(self, schema: str, sub_schema: str, data: DatabaseObject,
                       conditions: list = ((AccessDatabase.ID_FIELD, '!=', ''),), criteria: str = '',
                       native_criteria: bool = False) -> DatabaseObjectResult:
@@ -181,6 +193,7 @@ class DatabaseObjectModule(object):
         # This updates all object data defined in "data" attribute because we pass __dict__ to update method
         return self.update(schema, sub_schema, data.__dict__, conditions, criteria, native_criteria)
 
+    @log_function(logger)
     def update(self, schema: str, sub_schema: str, data: dict,
                conditions: list = ((AccessDatabase.ID_FIELD, '!=', ''),),
                criteria: str = '', native_criteria: bool = False) -> DatabaseObjectResult:
@@ -212,6 +225,7 @@ class DatabaseObjectModule(object):
         try:
             # Check if database is up
             if not self.is_connected:
+                logger.error('Error opening connection to datastore', exc_info=True)
                 raise DatabaseObjectException(ErrorMessages.CONNECTION_ERROR)
 
             schema_collection = DatabaseObjectModule._get_schema_collection(schema, sub_schema)
@@ -219,11 +233,16 @@ class DatabaseObjectModule(object):
             return DatabaseObjectModule._get_data_object_result_from_json('update', result=ret)
 
         except DatabaseObjectException as e:
+
             # Set false only if socket timeout exception and if another process has not set it to false
             if str(e) == ErrorMessages.CONNECTION_ERROR and self.is_connected:
                 self.is_connected = False
+                logger.critical('Connection to datastore lost')
+
+            logger.error('Error updating data from datastore', exc_info=True)
             return DatabaseObjectModule._get_data_object_result_from_json('update', exception=e)
 
+    @log_function(logger)
     def remove(self, schema: str, sub_schema: str, conditions: list = ((AccessDatabase.ID_FIELD, '!=', ''),),
                criteria: str = '',
                native_criteria: bool = False) -> DatabaseObjectResult:
@@ -252,6 +271,7 @@ class DatabaseObjectModule(object):
         try:
             # Check if database is up
             if not self.is_connected:
+                logger.error('Error opening connection to datastore', exc_info=True)
                 raise DatabaseObjectException(ErrorMessages.CONNECTION_ERROR)
 
             schema_collection = DatabaseObjectModule._get_schema_collection(schema, sub_schema)
@@ -259,9 +279,13 @@ class DatabaseObjectModule(object):
             return DatabaseObjectModule._get_data_object_result_from_json('remove', result=ret)
 
         except DatabaseObjectException as e:
+
             # Set false only if socket timeout exception and if another process has not set it to false
             if str(e) == ErrorMessages.CONNECTION_ERROR and self.is_connected:
                 self.is_connected = False
+                logger.critical('Connection to datastore lost')
+
+            logger.error('Error removing data from datastore', exc_info=True)
             return DatabaseObjectModule._get_data_object_result_from_json('remove', exception=e)
 
     @staticmethod
@@ -307,52 +331,6 @@ class DatabaseObjectModule(object):
                 return DatabaseObjectResult(DatabaseObjectResult.CODE_KO, data='')
 
 
-class DatabaseConfigureModule(object):
-    """
-    Class to get the configuration options
-    """
-
-    # Path configuration of file
-    CONFIGURE_FILE = 'config.ini'
-
-    def __init__(self) -> None:
-        """
-        Constructor: read properties file
-        """
-
-        self.config = configparser.ConfigParser()
-        self.config.read(CONFIG_PATH + DatabaseConfigureModule.CONFIGURE_FILE)
-
-    def get_sections(self) -> list:
-        """
-        Recover sections of config
-
-        :return: sections of config
-        :rtype: list
-        """
-
-        return self.config.sections()
-
-    def get_value(self, key: str, section: str = 'DEFAULT') -> str:
-        """
-        Recover value from section
-
-        :param key: key of the value
-        :type key: str
-
-        :param section: section
-        :type section: str
-
-        :return: value
-        :rtype: str
-        """
-
-        try:
-            return self.config[section][key]
-        except Exception as e:
-            raise DatabaseObjectException(ErrorMessages.KEYFILE_ERROR + str(e))
-
-
 class CheckConnectionThread(TaskThread):
 
     def __init__(self, dom: DatabaseObjectModule):
@@ -361,17 +339,15 @@ class CheckConnectionThread(TaskThread):
 
     def task(self):
         if self.dom.is_connected:
-            print('esta conectado')
             return
 
-        print('esta desconectado')
+        logger.critical('Datastore disconnected')
         try:
             self.dom.access_db.close_connection()
             time.sleep(0.05)
             self.dom.access_db.open_connection()
             self.dom.is_connected = self.dom.access_db.check_connection()
-            print('conexion restaurada')
+            logger.info('Connection restored')
         except:
-            print('no se pudo restaurar la conexion')
+            logger.critical('Connection can not be restored. Trying ...')
             pass
-        print('fin checkConnection')

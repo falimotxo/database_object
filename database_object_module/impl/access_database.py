@@ -75,8 +75,7 @@ class AccessDatabase(object):
         pass
 
     @abc.abstractmethod
-    def update(self, schema: str, data: dict, conditions: list, criteria: str,
-               native_criteria: bool) -> list:
+    def update(self, schema: str, data: dict, conditions: list, criteria: str, native_criteria: bool) -> list:
         """
         Update the object from the database.
 

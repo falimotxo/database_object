@@ -115,6 +115,9 @@ class DatabaseObjectResult(object):
         # Return list of the objects
         return output
 
+    def __repr__(self):
+        return str(self.__dict__)
+
 
 class DatabaseObjectException(Exception):
     """
@@ -142,18 +145,19 @@ class ErrorMessages(object):
     """
 
     # Error messages
-    CONNECTION_ERROR = 'Could not connect to database '
-    GET_ERROR = 'Error getting data '
-    PUT_ERROR = 'Error storing data '
-    UPDATE_ERROR = 'Error updating data '
-    REMOVE_ERROR = 'Error removing data '
-    CONFIGURATION_ERROR = 'Error configuring database '
-    KEYFILE_ERROR = 'Not found the key '
-    ID_ERROR = 'Error in the ID format '
-    SCHEMA_ERROR = 'Error accessing non-existent schema '
-    CRITERIA_ERROR = 'Error in action criteria '
-    DATA_ERROR = 'Error in input data '
-    REPR_ERROR = 'Method __repr__ must be implemented '
-    INHERITANCE_ERROR = 'Data must inherit from DatabaseObject '
-    DISTINCT_ATTRIBUTES_ERROR = 'Attributes not are the same '
-    KO_ERROR = 'KO error '
+    CONNECTION_ERROR = 'Could not connect to database'
+    GET_ERROR = 'Error getting data'
+    PUT_ERROR = 'Error storing data'
+    UPDATE_ERROR = 'Error updating data'
+    REMOVE_ERROR = 'Error removing data'
+    REMOVE_NON_EXISTENT_WARNING = 'Schema or subschema does not exist'
+    CONFIGURATION_ERROR = 'Error configuring database'
+    KEYFILE_ERROR = 'Not found the key'
+    ID_ERROR = 'Error in the ID format'
+    SCHEMA_ERROR = 'Error accessing non-existent schema'
+    CRITERIA_ERROR = 'Error in action criteria'
+    DATA_ERROR = 'Error in input data'
+    REPR_ERROR = 'Method __repr__ must be implemented'
+    INHERITANCE_ERROR = 'Data must inherit from DatabaseObject'
+    DISTINCT_ATTRIBUTES_ERROR = 'Attributes not are the same'
+    KO_ERROR = 'KO error'

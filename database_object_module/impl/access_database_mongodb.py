@@ -1,10 +1,13 @@
-import time
+import time, logging
 
 from pymongo import MongoClient, collection, errors, ASCENDING
 from pymongo.errors import ServerSelectionTimeoutError
 
 from database_object_module.data_model import DatabaseObjectException, ErrorMessages
 from database_object_module.impl.access_database import AccessDatabase
+from database_object_module.tools.decorators import log_function
+
+logger = logging.getLogger(__name__)
 
 
 class AccessDatabaseMongoDB(AccessDatabase):
@@ -45,10 +48,11 @@ class AccessDatabaseMongoDB(AccessDatabase):
             self.db = self.connection.get_database()
 
         except errors.ConfigurationError as e:
-            raise DatabaseObjectException(ErrorMessages.CONFIGURATION_ERROR + str(e))
+            raise DatabaseObjectException(ErrorMessages.CONFIGURATION_ERROR)
         except DatabaseObjectException as e:
             raise e
 
+    @log_function(logger, logging.DEBUG)
     def get(self, schema: str, conditions: list, criteria: str, native_criteria: bool) -> list:
         """
         Get data from mongodb
@@ -94,8 +98,9 @@ class AccessDatabaseMongoDB(AccessDatabase):
         except ServerSelectionTimeoutError:
             raise DatabaseObjectException(ErrorMessages.CONNECTION_ERROR)
         except Exception as e:
-            raise DatabaseObjectException(ErrorMessages.GET_ERROR + str(e))
+            raise DatabaseObjectException(ErrorMessages.GET_ERROR)
 
+    @log_function(logger, logging.DEBUG)
     def put(self, schema: str, data: dict) -> list:
         """
         Insert data to mongodb
@@ -134,8 +139,9 @@ class AccessDatabaseMongoDB(AccessDatabase):
         except ServerSelectionTimeoutError:
             raise DatabaseObjectException(ErrorMessages.CONNECTION_ERROR)
         except Exception as e:
-            raise DatabaseObjectException(ErrorMessages.PUT_ERROR + str(e))
+            raise DatabaseObjectException(ErrorMessages.PUT_ERROR)
 
+    @log_function(logger, logging.DEBUG)
     def update(self, schema: str, data: dict, conditions: list, criteria: str,
                native_criteria: bool) -> list:
         """
@@ -187,8 +193,9 @@ class AccessDatabaseMongoDB(AccessDatabase):
         except ServerSelectionTimeoutError:
             raise DatabaseObjectException(ErrorMessages.CONNECTION_ERROR)
         except Exception as e:
-            raise DatabaseObjectException(ErrorMessages.PUT_ERROR + str(e))
+            raise DatabaseObjectException(ErrorMessages.PUT_ERROR)
 
+    @log_function(logger, logging.DEBUG)
     def remove(self, schema: str, conditions: list, criteria: str, native_criteria: bool) -> list:
         """
         Delete elements from mongodb
@@ -232,7 +239,14 @@ class AccessDatabaseMongoDB(AccessDatabase):
         except ServerSelectionTimeoutError:
             raise DatabaseObjectException(ErrorMessages.CONNECTION_ERROR)
         except Exception as e:
-            raise DatabaseObjectException(ErrorMessages.REMOVE_ERROR + str(e))
+            # If there is SCHEMA_ERROR, this is not an error because schema does not exist. Only log warning
+            if str(e) == ErrorMessages.SCHEMA_ERROR:
+                logger.warning('Schema or subschema does not exist')
+                output_list = list()
+                output_list.append({AccessDatabase.DELETED_COUNT: 0})
+                return output_list
+            else:
+                raise DatabaseObjectException(ErrorMessages.REMOVE_ERROR)
 
     def _get_collection(self, schema: str, create_collection: bool = False) -> collection.Collection:
         """
@@ -260,7 +274,8 @@ class AccessDatabaseMongoDB(AccessDatabase):
 
         # In other case, throw the exception
         else:
-            raise DatabaseObjectException(ErrorMessages.SCHEMA_ERROR + schema)
+            logger.warning('Mongodb schema {} can not be recovered'.format(schema))
+            raise DatabaseObjectException(ErrorMessages.SCHEMA_ERROR)
 
         # Return the mongo collection
         return mongo_collect
@@ -300,6 +315,7 @@ class AccessDatabaseMongoDB(AccessDatabase):
 
         except errors.ConnectionFailure:
             # Return false, the connection is dead
+            logger.debug('Mongodb connection is dead', exc_info=True)
             return False
 
     @staticmethod
@@ -338,7 +354,7 @@ class AccessDatabaseMongoDB(AccessDatabase):
             return mongo_data
 
         except KeyError as e:
-            raise DatabaseObjectException(ErrorMessages.DATA_ERROR + str(e))
+            raise DatabaseObjectException(ErrorMessages.DATA_ERROR)
 
     @staticmethod
     def _create_mongo_criteria(conditions: list, criteria: str, native_criteria: bool) -> dict:
@@ -401,10 +417,11 @@ class AccessDatabaseMongoDB(AccessDatabase):
                 mongo_criteria[AccessDatabaseMongoDB.MONGO_JOIN_CONDITION].append(dict(criteria))
 
             # Return the mongo criteria
+            logger.debug('Mongo criteria {}'.format(mongo_criteria))
             return mongo_criteria
 
         except Exception as e:
-            raise DatabaseObjectException(ErrorMessages.CRITERIA_ERROR + str(e))
+            raise DatabaseObjectException(ErrorMessages.CRITERIA_ERROR)
 
     @staticmethod
     def _str_to_mongoid(str_id: str) -> collection.ObjectId:
@@ -426,7 +443,7 @@ class AccessDatabaseMongoDB(AccessDatabase):
             return mongo_id
 
         except (errors.InvalidId, ValueError) as e:
-            raise DatabaseObjectException(ErrorMessages.ID_ERROR + str(e))
+            raise DatabaseObjectException(ErrorMessages.ID_ERROR)
 
     @staticmethod
     def _mongoid_to_str(mongo_id: collection.ObjectId) -> str:
