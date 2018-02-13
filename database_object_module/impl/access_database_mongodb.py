@@ -47,7 +47,7 @@ class AccessDatabaseMongoDB(AccessDatabase):
             # Get database from URL connection
             self.db = self.connection.get_database()
 
-        except errors.ConfigurationError as e:
+        except errors.ConfigurationError:
             raise DatabaseObjectException(ErrorMessages.CONFIGURATION_ERROR)
         except DatabaseObjectException as e:
             raise e
@@ -97,7 +97,7 @@ class AccessDatabaseMongoDB(AccessDatabase):
 
         except ServerSelectionTimeoutError:
             raise DatabaseObjectException(ErrorMessages.CONNECTION_ERROR)
-        except Exception as e:
+        except Exception:
             raise DatabaseObjectException(ErrorMessages.GET_ERROR)
 
     @log_function(logger, logging.DEBUG)
@@ -138,7 +138,7 @@ class AccessDatabaseMongoDB(AccessDatabase):
 
         except ServerSelectionTimeoutError:
             raise DatabaseObjectException(ErrorMessages.CONNECTION_ERROR)
-        except Exception as e:
+        except Exception:
             raise DatabaseObjectException(ErrorMessages.PUT_ERROR)
 
     @log_function(logger, logging.DEBUG)
@@ -192,7 +192,7 @@ class AccessDatabaseMongoDB(AccessDatabase):
 
         except ServerSelectionTimeoutError:
             raise DatabaseObjectException(ErrorMessages.CONNECTION_ERROR)
-        except Exception as e:
+        except Exception:
             raise DatabaseObjectException(ErrorMessages.PUT_ERROR)
 
     @log_function(logger, logging.DEBUG)
@@ -353,7 +353,7 @@ class AccessDatabaseMongoDB(AccessDatabase):
             # Return the mongo data
             return mongo_data
 
-        except KeyError as e:
+        except KeyError:
             raise DatabaseObjectException(ErrorMessages.DATA_ERROR)
 
     @staticmethod
@@ -420,7 +420,7 @@ class AccessDatabaseMongoDB(AccessDatabase):
             logger.debug('Mongo criteria {}'.format(mongo_criteria))
             return mongo_criteria
 
-        except Exception as e:
+        except Exception:
             raise DatabaseObjectException(ErrorMessages.CRITERIA_ERROR)
 
     @staticmethod
@@ -442,7 +442,7 @@ class AccessDatabaseMongoDB(AccessDatabase):
             # Return the mongo ID in ObjectId format.
             return mongo_id
 
-        except (errors.InvalidId, ValueError) as e:
+        except (errors.InvalidId, ValueError):
             raise DatabaseObjectException(ErrorMessages.ID_ERROR)
 
     @staticmethod
