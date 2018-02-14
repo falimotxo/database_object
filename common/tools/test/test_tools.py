@@ -1,8 +1,12 @@
+import random
+import time
 from threading import Lock, Thread
-from database_object_module.tools.decorators import dump_args, synchronized, log_function, timeout
-from database_object_module.tools.task_thread import TaskThread
+
+from common.tools.decorators import dump_args, synchronized, log_function, timeout
 from nose.tools import assert_true, raises
-import time, random
+
+from common.tools.task_thread import TaskThread
+
 
 class TestTools(object):
 

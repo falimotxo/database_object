@@ -1,6 +1,7 @@
-from database_object_module.expression_evaluator.operations import Operations
-import sys
 import re
+import sys
+
+from common.expression_evaluator.operations import Operations
 
 
 class Stack:
@@ -175,7 +176,7 @@ class ExpressionEvaluator:
                     else:
                         arguments_subst.append(x)
 
-                method = getattr(sys.modules['database_object_module.expression_evaluator.operations'], function_name)
+                method = getattr(sys.modules['common.expression_evaluator.operations'], function_name)
                 res = method(arguments_subst)
                 s.push(res)
             else:

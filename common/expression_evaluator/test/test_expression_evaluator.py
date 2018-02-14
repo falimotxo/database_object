@@ -1,5 +1,6 @@
 from nose.tools import assert_equal, assert_true, assert_false, raises
-from database_object_module.expression_evaluator.expression_evaluator import Stack, Token, ExpressionEvaluator
+
+from common.expression_evaluator.expression_evaluator import Stack, Token, ExpressionEvaluator
 
 
 class TestExpressionEvaluator(object):

@@ -1,5 +1,8 @@
 from nose.tools import assert_equal, assert_true
 
+# import common.infra_manager as InfraManager
+from common import config
+
 from database_object_module.data_model import DatabaseObject, DatabaseObjectResult
 from database_object_module.database_object_module import DatabaseObjectModule
 
@@ -57,7 +60,8 @@ class TestDatabaseObjectModule(object):
         """
         This method is run once for each class before any tests are run
         """
-        TestDatabaseObjectModule.module = DatabaseObjectModule()
+        # TestDatabaseObjectModule.module = DatabaseObjectModule()
+        TestDatabaseObjectModule.module = DatabaseObjectModule(config)
 
     @classmethod
     def teardown_class(cls):

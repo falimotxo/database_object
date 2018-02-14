@@ -1,6 +1,8 @@
-from nose.tools import assert_equal, assert_not_equal, assert_true, assert_false, raises
-import database_object_module.expression_evaluator.operations as op
 import datetime
+
+from nose.tools import assert_equal, assert_not_equal, assert_true, assert_false, raises
+
+import common.expression_evaluator.operations as op
 
 
 class TestOperations(object):

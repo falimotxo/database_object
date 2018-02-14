@@ -1,13 +1,22 @@
-import time, logging
+import logging
+import time
 
 from pymongo import MongoClient, collection, errors, ASCENDING
 from pymongo.errors import ServerSelectionTimeoutError
 
+from common.tools.decorators import log_function
+
+# import database_object_module.database_object_module
+
+
+# from database_object_module.database_object_module import DatabaseObjectModule
+from database_object_module import MODULE_NAME
+
 from database_object_module.data_model import DatabaseObjectException, ErrorMessages
 from database_object_module.impl.access_database import AccessDatabase
-from database_object_module.tools.decorators import log_function
 
-logger = logging.getLogger(__name__)
+# logger = logging.getLogger(__name__)
+logger = logging.getLogger(MODULE_NAME)
 
 
 class AccessDatabaseMongoDB(AccessDatabase):
@@ -242,7 +251,6 @@ class AccessDatabaseMongoDB(AccessDatabase):
             # If there is SCHEMA_ERROR, this is not an error because schema does not exist. Only log warning
             if str(e) == ErrorMessages.SCHEMA_ERROR:
                 logger.warning('Schema or subschema does not exist')
-                output_list = list()
                 output_list.append({AccessDatabase.DELETED_COUNT: 0})
                 return output_list
             else:

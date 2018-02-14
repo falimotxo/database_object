@@ -1,31 +1,40 @@
-import time
+import time, logging
+
+from common.infra_config import InfraConfig
+from common.infra_module import InfraModule
+from common.tools.decorators import log_function
+from common.tools.task_thread import TaskThread
+from common import logger
+
+from database_object_module import MODULE_NAME
 
 from database_object_module.data_model import DatabaseObjectResult, DatabaseObjectException, ErrorMessages, \
     DatabaseObject
-from database_object_module.impl.access_database_factory import AccessDatabaseFactory
 from database_object_module.impl.access_database import AccessDatabase
-from database_object_module.tools.task_thread import TaskThread
-from database_object_module.tools.decorators import log_function
-from database_object_module import config, logger
+from database_object_module.impl.access_database_factory import AccessDatabaseFactory
 
 
-class DatabaseObjectModule(object):
+logger = logging.getLogger(MODULE_NAME)
+
+class DatabaseObjectModule(InfraModule):
     """
     Main class of database access
     """
 
-    def __init__(self) -> None:
+
+
+    def __init__(self, config: InfraConfig) -> None:
         """
         Constructor that gets configuration, database name and connection instance
         """
 
-        # global logger
-        # logger = logging.getLogger(__name__)
-        logger.info('INIT MODULE')
+        logger.info('INIT MODULE' + ' ' + MODULE_NAME)
+
+        logger.info(__name__)
 
         try:
-            name_database = config.get_value('name_database')
-            connection_database = config.get_value('connection_database')
+            name_database = config.get_value(MODULE_NAME, 'name_database')
+            connection_database = config.get_value(MODULE_NAME, 'connection_database')
 
             # Connect to datastore
             self.access_db = AccessDatabaseFactory.get_access_database(name_database, connection_database)
@@ -37,7 +46,6 @@ class DatabaseObjectModule(object):
             self.is_connected = False
 
         self.daemon = CheckConnectionThread(self)
-        # self.daemon.dom = self
         self.daemon.start()
         logger.info('CheckConnection daemon started')
         logger.info('Accepting requests')
@@ -332,6 +340,8 @@ class DatabaseObjectModule(object):
 
 
 class CheckConnectionThread(TaskThread):
+
+    # logger = logging.getLogger(DatabaseObjectModule.MODULE_NAME)
 
     def __init__(self, dom: DatabaseObjectModule):
         TaskThread.__init__(self)
