@@ -365,8 +365,8 @@ class TestDatabaseObjectModule(object):
         object_name = DatabaseObjectTest2.__name__
         for i in range(max_iteration):
             data = DatabaseObjectTest2(i)
-            result_get = self.module.put_object(schema, object_name, data)
-            insert_id_list.append(result_get.get_object_from_data()[0].get_id)
+            result_put = self.module.put_object(schema, object_name, data)
+            insert_id_list.append(result_put.get_object_from_data()[0].get_id)
 
         result_get = self.module.get(schema, object_name, [('user_arg', 'in', list_arg)])
         inst_get = result_get.get_object_from_data()
@@ -386,8 +386,8 @@ class TestDatabaseObjectModule(object):
         object_name = DatabaseObjectTest2.__name__
         for i in range(max_iteration):
             data = DatabaseObjectTest2(i)
-            result_get = self.module.put_object(schema, object_name, data)
-            insert_id_list.append(result_get.get_object_from_data()[0].get_id)
+            result_put = self.module.put_object(schema, object_name, data)
+            insert_id_list.append(result_put.get_object_from_data()[0].get_id)
 
         result_get = self.module.get(schema, object_name, [('user_arg', 'out', list_arg)])
         inst_get = result_get.get_object_from_data()
@@ -407,8 +407,8 @@ class TestDatabaseObjectModule(object):
         object_name = DatabaseObjectTest2.__name__
         for i in range(max_iteration):
             data = DatabaseObjectTest2(i)
-            result_get = self.module.put_object(schema, object_name, data)
-            insert_id_list.append(result_get.get_object_from_data()[0].get_id)
+            result_put = self.module.put_object(schema, object_name, data)
+            insert_id_list.append(result_put.get_object_from_data()[0].get_id)
 
         result_get = self.module.get(schema, object_name, [('user_arg', '>', number_to_compare)])
         inst_get = result_get.get_object_from_data()
@@ -428,8 +428,8 @@ class TestDatabaseObjectModule(object):
         object_name = DatabaseObjectTest2.__name__
         for i in range(max_iteration):
             data = DatabaseObjectTest2(i)
-            result_get = self.module.put_object(schema, object_name, data)
-            insert_id_list.append(result_get.get_object_from_data()[0].get_id)
+            result_put = self.module.put_object(schema, object_name, data)
+            insert_id_list.append(result_put.get_object_from_data()[0].get_id)
 
         result_get = self.module.get(schema, object_name, [('user_arg', '<', number_to_compare)])
         inst_get = result_get.get_object_from_data()
@@ -449,8 +449,8 @@ class TestDatabaseObjectModule(object):
         object_name = DatabaseObjectTest2.__name__
         for i in range(max_iteration):
             data = DatabaseObjectTest2(i)
-            result_get = self.module.put_object(schema, object_name, data)
-            insert_id_list.append(result_get.get_object_from_data()[0].get_id)
+            result_put = self.module.put_object(schema, object_name, data)
+            insert_id_list.append(result_put.get_object_from_data()[0].get_id)
 
         result_get = self.module.get(schema, object_name, [('user_arg', '>=', number_to_compare)])
         inst_get = result_get.get_object_from_data()
@@ -470,8 +470,8 @@ class TestDatabaseObjectModule(object):
         object_name = DatabaseObjectTest2.__name__
         for i in range(max_iteration):
             data = DatabaseObjectTest2(i)
-            result_get = self.module.put_object(schema, object_name, data)
-            insert_id_list.append(result_get.get_object_from_data()[0].get_id)
+            result_put = self.module.put_object(schema, object_name, data)
+            insert_id_list.append(result_put.get_object_from_data()[0].get_id)
 
         result_get = self.module.get(schema, object_name, [('user_arg', '<=', number_to_compare)])
         inst_get = result_get.get_object_from_data()
@@ -491,8 +491,8 @@ class TestDatabaseObjectModule(object):
         object_name = DatabaseObjectTest2.__name__
         for i in range(max_iteration):
             data = DatabaseObjectTest2(i)
-            result_get = self.module.put_object(schema, object_name, data)
-            insert_id_list.append(result_get.get_object_from_data()[0].get_id)
+            result_put = self.module.put_object(schema, object_name, data)
+            insert_id_list.append(result_put.get_object_from_data()[0].get_id)
 
         result_get = self.module.get(schema, object_name, [('user_arg', '!=', number_to_compare)])
         inst_get = result_get.get_object_from_data()
@@ -512,8 +512,8 @@ class TestDatabaseObjectModule(object):
         object_name = DatabaseObjectTest2.__name__
         for i in range(max_iteration):
             data = DatabaseObjectTest2(i)
-            result_get = self.module.put_object(schema, object_name, data)
-            insert_id_list.append(result_get.get_object_from_data()[0].get_id)
+            result_put = self.module.put_object(schema, object_name, data)
+            insert_id_list.append(result_put.get_object_from_data()[0].get_id)
 
         result_get = self.module.get(schema, object_name, [('user_arg', '=', number_to_compare)])
         inst_get = result_get.get_object_from_data()[0]
