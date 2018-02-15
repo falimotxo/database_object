@@ -1,4 +1,5 @@
 import ast
+
 from database_object_module.impl.access_database import AccessDatabase
 
 
@@ -69,7 +70,7 @@ class DatabaseObjectResult(object):
     def get_object_from_data(self, obj=DatabaseObject()):
 
         if self.code == self.CODE_KO:
-            raise(DatabaseObjectException(ErrorMessages.KO_ERROR))
+            raise (DatabaseObjectException(ErrorMessages.KO_ERROR))
 
         # Recover list of dictionaries from string
         datas = ast.literal_eval(self.data)

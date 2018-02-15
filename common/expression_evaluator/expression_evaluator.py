@@ -18,7 +18,7 @@ class Stack:
         return self.items.pop()
 
     def peek(self):
-        return self.items[len(self.items)-1]
+        return self.items[len(self.items) - 1]
 
     def size(self):
         return len(self.items)
@@ -165,7 +165,7 @@ class ExpressionEvaluator:
                 pos_bracket_open = token.value.find('[')
                 pos_bracket_close = token.value.find(']')
                 function_name = token.value[0:pos_bracket_open]
-                arguments = token.value[pos_bracket_open+1:pos_bracket_close].split(',')
+                arguments = token.value[pos_bracket_open + 1:pos_bracket_close].split(',')
 
                 arguments_subst = list()
                 for x in arguments:

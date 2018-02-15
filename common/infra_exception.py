@@ -1,5 +1,3 @@
-
-
 class InfraException(Exception):
     """
     Standard exception

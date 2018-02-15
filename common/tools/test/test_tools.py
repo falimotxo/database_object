@@ -2,9 +2,9 @@ import random
 import time
 from threading import Lock, Thread
 
-from common.tools.decorators import dump_args, synchronized, log_function, timeout
 from nose.tools import assert_true, raises
 
+from common.tools.decorators import dump_args, synchronized, log_function, timeout
 from common.tools.task_thread import TaskThread
 
 
@@ -51,7 +51,6 @@ class TestTools(object):
         assert_true(True)
 
     def test_dump_args(self):
-
         @dump_args
         def f1(a, b, c):
             return a + b + c
@@ -60,7 +59,6 @@ class TestTools(object):
         assert_true(True)
 
     def test_synchonized(self):
-
         my_lock = Lock()
 
         @synchronized(my_lock)
@@ -85,15 +83,16 @@ class TestTools(object):
         assert_true(True)
 
     def test_log(self):
-
         @log_function()
         def f1(a):
             pass
+
         f1(3)
 
         @log_function()
         def f2():
             pass
+
         f2()
 
         assert_true(True)
@@ -103,11 +102,13 @@ class TestTools(object):
         @timeout(1)
         def f():
             time.sleep(2)
+
         f()
 
     def test_timeout_2(self):
         @timeout(2)
         def f():
             time.sleep(1)
+
         f()
         assert_true(True)

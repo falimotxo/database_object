@@ -5,15 +5,12 @@ from pymongo import MongoClient, collection, errors, ASCENDING
 from pymongo.errors import ServerSelectionTimeoutError
 
 from common.tools.decorators import log_function
-
-# import database_object_module.database_object_module
-
-
 # from database_object_module.database_object_module import DatabaseObjectModule
 from database_object_module import MODULE_NAME
-
 from database_object_module.data_model import DatabaseObjectException, ErrorMessages
 from database_object_module.impl.access_database import AccessDatabase
+
+# import database_object_module.database_object_module
 
 # logger = logging.getLogger(__name__)
 logger = logging.getLogger(MODULE_NAME)

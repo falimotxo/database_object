@@ -1,34 +1,31 @@
-import time, logging
+import logging
+import time
 
+from common import logger
 from common.infra_config import InfraConfig
 from common.infra_module import InfraModule
 from common.tools.decorators import log_function
 from common.tools.task_thread import TaskThread
-from common import logger
-
 from database_object_module import MODULE_NAME
-
 from database_object_module.data_model import DatabaseObjectResult, DatabaseObjectException, ErrorMessages, \
     DatabaseObject
 from database_object_module.impl.access_database import AccessDatabase
 from database_object_module.impl.access_database_factory import AccessDatabaseFactory
 
-
 logger = logging.getLogger(MODULE_NAME)
+
 
 class DatabaseObjectModule(InfraModule):
     """
     Main class of database access
     """
 
-
-
     def __init__(self, config: InfraConfig) -> None:
         """
         Constructor that gets configuration, database name and connection instance
         """
 
-        logger.info('INIT MODULE' + ' ' + MODULE_NAME)
+        logger.info('INIT MODULE ' + MODULE_NAME)
 
         logger.info(__name__)
 
@@ -358,6 +355,6 @@ class CheckConnectionThread(TaskThread):
             self.dom.access_db.open_connection()
             self.dom.is_connected = self.dom.access_db.check_connection()
             logger.info('Connection restored')
-        except:
+        except DatabaseObjectException:
             logger.critical('Connection can not be restored. Trying ...')
             pass

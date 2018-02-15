@@ -3,17 +3,17 @@ from datetime import datetime, timedelta
 
 
 class Operations:
-
     # Cada operador es una tupla formada por una funcion, un numero de argumentos y una precedencia de operadores
     # La precedencia maxima es 1 y esta reservada para los parentesis
     OPERATORS = {
-                '=': (operator.eq, 2, 3), '!=': (operator.ne, 2, 3), '<': (operator.lt, 2, 3),
-                '>': (operator.gt, 2, 3), '>=': (operator.ge, 2, 3), '<=': (operator.le, 2, 3),
-                'and': (operator.and_, 2, 2), 'or': (operator.or_, 2, 2), 'not': (operator.not_, 1, 2),
-                'contains': (operator.contains, 2, 3), 'icontains': (lambda x, y: y.upper() in x.upper(), 2, 3),
-                '+': (operator.add, 2, 2), '-': (operator.sub, 2, 2),
-                '*': (operator.mul, 2, 3), '/': (operator.truediv, 2, 3)
-                }
+        '=': (operator.eq, 2, 3), '!=': (operator.ne, 2, 3), '<': (operator.lt, 2, 3),
+        '>': (operator.gt, 2, 3), '>=': (operator.ge, 2, 3), '<=': (operator.le, 2, 3),
+        'and': (operator.and_, 2, 2), 'or': (operator.or_, 2, 2), 'not': (operator.not_, 1, 2),
+        'contains': (operator.contains, 2, 3), 'icontains': (lambda x, y: y.upper() in x.upper(), 2, 3),
+        '+': (operator.add, 2, 2), '-': (operator.sub, 2, 2),
+        '*': (operator.mul, 2, 3), '/': (operator.truediv, 2, 3)
+    }
+
 
 # Definicion de funciones
 # Todas las funciones tienen como argumento una lista de valores
@@ -77,7 +77,7 @@ def diff_dates_in_days(arg_list):
     try:
         d1 = datetime.strptime(arg_list[0], formatter)
         d2 = datetime.strptime(arg_list[1], formatter)
-        return (d2-d1).days
+        return (d2 - d1).days
     except Exception as e:
         raise ValueError('{}: {}'.format(ERROR_INVALID_ARGS, e))
 

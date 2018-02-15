@@ -2,9 +2,7 @@ import time
 
 from common import config, logger
 from common.infra_exception import InfraException
-
 from database_object_module.database_object_module import DatabaseObjectModule
-
 
 module_names = {
     'database_object_module': DatabaseObjectModule
@@ -34,7 +32,6 @@ def main():
     while True:
         time.sleep(2)
 
-if __name__== "__main__":
+
+if __name__ == "__main__":
     main()
-
-

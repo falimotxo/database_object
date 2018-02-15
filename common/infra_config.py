@@ -1,7 +1,8 @@
-import os
+import configparser
 import logging
 import logging.config
-import configparser
+import os
+
 from common.infra_exception import InfraException, GenericErrorMessages
 
 
