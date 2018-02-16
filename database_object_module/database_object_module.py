@@ -1,7 +1,7 @@
 import logging
 import time
 
-from common import logger
+from common import config
 from common.infra_config import InfraConfig
 from common.infra_module import InfraModule
 from common.tools.decorators import log_function
@@ -12,7 +12,8 @@ from database_object_module.data_model import DatabaseObjectResult, DatabaseObje
 from database_object_module.impl.access_database import AccessDatabase
 from database_object_module.impl.access_database_factory import AccessDatabaseFactory
 
-logger = logging.getLogger(MODULE_NAME)
+
+logger = config.get_log(MODULE_NAME)
 
 
 class DatabaseObjectModule(InfraModule):

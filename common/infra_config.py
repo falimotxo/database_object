@@ -1,6 +1,7 @@
 import configparser
 import logging
 import logging.config
+import logging.handlers
 import os
 
 from common.infra_exception import InfraException, GenericErrorMessages
@@ -31,15 +32,18 @@ class InfraConfig(object):
     Class to get the configuration options
     """
 
+    FORMATTER = '%(asctime)s %(filename)-30s:%(lineno)4d %(funcName)-22s %(levelname)-8s - %(message)s %(name)s'
+    MAX_SIZE = 104857600
+    MAX_FILES = 10
+    ATTR_LOG_LEVEL = 'log_level'
+
     # Path configuration of file
     CONFIGURE_FILE = 'config.ini'
-    LOGGING_FILE = 'logging.ini'
 
     # Common folders
     BASE_PATH = os.path.dirname(__file__)
     CONFIG_FOLDER = 'etc'
     CONFIG_PATH = BASE_PATH + '/../{}/'.format(CONFIG_FOLDER)
-    CONFIG_LOGGING_FULL_PATH = CONFIG_PATH + LOGGING_FILE
     CONFIG_FILE_FULL_PATH = CONFIG_PATH + CONFIGURE_FILE
 
     def __init__(self) -> None:
@@ -48,13 +52,56 @@ class InfraConfig(object):
         """
 
         # Logging config
-        logging.config.fileConfig(InfraConfig.CONFIG_LOGGING_FULL_PATH)
-        for h in logging.root.handlers:
-            h.setFormatter(CustomFormatter(h.formatter))
+        # logging.config.fileConfig(InfraConfig.CONFIG_LOGGING_FULL_PATH)
+        # for h in logging.root.handlers:
+        #     h.setFormatter(CustomFormatter(h.formatter))
 
         # Config file
         self.config = configparser.ConfigParser()
         self.config.read(InfraConfig.CONFIG_FILE_FULL_PATH)
+
+        self.logs = dict()
+
+        section_modules = self.get_sections()
+        for section_module in section_modules:
+            log = self.setup_logger(section_module, self.get_value(section_module, InfraConfig.ATTR_LOG_LEVEL))
+            self.logs[section_module] = log
+
+    def get_log(self, logger_name):
+        if logger_name in self.logs.keys():
+            return self.logs[logger_name]
+        else:
+            raise InfraException(GenericErrorMessages.UNKNOWN_LOG_ERROR)
+
+    def setup_logger(self, logger_name, level):
+
+        # Create logger with 'spam_application'
+        logger = logging.getLogger(logger_name)
+        logger.setLevel(level)
+
+        # Create formatter
+        f = logging.Formatter(InfraConfig.FORMATTER)
+
+        # Create file handler which logs even debug messages
+        rfh = logging.handlers.RotatingFileHandler('../{}.log'.format(logger_name), 'a',
+                                                   InfraConfig.MAX_SIZE, InfraConfig.MAX_FILES)
+        rfh.setLevel(level)
+        rfh.setFormatter(f)
+
+        # create console handler with a higher log level
+        ch = logging.StreamHandler()
+        ch.setLevel(level)
+        ch.setFormatter(f)
+
+        # add the handlers to the logger
+        logger.addHandler(rfh)
+        logger.addHandler(ch)
+
+        # Set custom formatter
+        for h in logging.root.handlers:
+            h.setFormatter(CustomFormatter(h.formatter))
+
+        return logger
 
     def get_sections(self) -> list:
         """

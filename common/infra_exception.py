@@ -14,3 +14,4 @@ class GenericErrorMessages:
 
     # Error messages
     KEYFILE_ERROR = 'Not found the key'
+    UNKNOWN_LOG_ERROR = 'Unknown log name'

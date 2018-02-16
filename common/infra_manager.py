@@ -1,6 +1,6 @@
 import time
 
-from common import config, logger
+from common import config
 from common.infra_exception import InfraException
 from database_object_module.database_object_module import DatabaseObjectModule
 
@@ -12,6 +12,8 @@ modules_manager = dict()
 
 
 def main():
+    logger = config.get_log('infra')
+
     logger.info('INIT MODULES')
 
     # Read config and build all active modules
