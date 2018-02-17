@@ -32,10 +32,11 @@ class InfraConfig(object):
     Class to get the configuration options
     """
 
-    FORMATTER = '%(asctime)s %(filename)-30s:%(lineno)4d %(funcName)-22s %(levelname)-8s - %(message)s %(name)s'
+    FORMATTER = None
     MAX_SIZE = 104857600
     MAX_FILES = 10
     ATTR_LOG_LEVEL = 'log_level'
+    ATTR_LOG_FORMATTER = 'log_formatter'
 
     # Path configuration of file
     CONFIGURE_FILE = 'config.ini'
@@ -57,10 +58,13 @@ class InfraConfig(object):
         #     h.setFormatter(CustomFormatter(h.formatter))
 
         # Config file
-        self.config = configparser.ConfigParser()
+        self.config = configparser.RawConfigParser()
         self.config.read(InfraConfig.CONFIG_FILE_FULL_PATH)
 
+        InfraConfig.FORMATTER = self.get_value('infra', InfraConfig.ATTR_LOG_FORMATTER)
+
         self.logs = dict()
+
 
         section_modules = self.get_sections()
         for section_module in section_modules:
@@ -80,7 +84,8 @@ class InfraConfig(object):
         logger.setLevel(level)
 
         # Create formatter
-        f = logging.Formatter(InfraConfig.FORMATTER)
+        original_formatter = logging.Formatter(InfraConfig.FORMATTER)
+        f = CustomFormatter(original_formatter)
 
         # Create file handler which logs even debug messages
         rfh = logging.handlers.RotatingFileHandler('../{}.log'.format(logger_name), 'a',
@@ -96,10 +101,7 @@ class InfraConfig(object):
         # add the handlers to the logger
         logger.addHandler(rfh)
         logger.addHandler(ch)
-
-        # Set custom formatter
-        for h in logging.root.handlers:
-            h.setFormatter(CustomFormatter(h.formatter))
+        logger.propagate = 0
 
         return logger
 
@@ -129,5 +131,6 @@ class InfraConfig(object):
 
         try:
             return self.config[section][key]
-        except Exception:
+        except Exception as e:
+            print(e)
             raise InfraException(GenericErrorMessages.KEYFILE_ERROR)
