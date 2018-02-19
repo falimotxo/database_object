@@ -516,7 +516,7 @@ class TestDatabaseObjectModule(object):
             insert_id_list.append(result_put.get_object_from_data()[0].get_id)
 
         result_get = self.module.get(schema, object_name, [('user_arg', '=', number_to_compare)])
-        inst_get = result_get.get_object_from_data()[0]
+        inst_get = result_get.get_object_from_data(obj=DatabaseObjectTest2())[0]
 
         inst_get.user_arg = 11
         result_update = self.module.update_object(schema, object_name, inst_get)

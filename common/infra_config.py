@@ -3,6 +3,7 @@ import logging
 import logging.config
 import logging.handlers
 import os
+import logstash
 
 from common.infra_exception import InfraException, GenericErrorMessages
 
@@ -32,11 +33,15 @@ class InfraConfig(object):
     Class to get the configuration options
     """
 
+    HOST_LOGSTASH = None
+    PORT_LOGSTASH = None
     FORMATTER = None
     MAX_SIZE = 104857600
     MAX_FILES = 10
     ATTR_LOG_LEVEL = 'log_level'
     ATTR_LOG_FORMATTER = 'log_formatter'
+    ATTR_HOST_LOGSTASH = 'log_logstash_host'
+    ATTR_PORT_LOGSTASH = 'log_logstash_port'
 
     # Path configuration of file
     CONFIGURE_FILE = 'config.ini'
@@ -63,6 +68,13 @@ class InfraConfig(object):
 
         InfraConfig.FORMATTER = self.get_value('infra', InfraConfig.ATTR_LOG_FORMATTER)
 
+        # If not exists logstash configuration, do anything
+        try:
+            InfraConfig.HOST_LOGSTASH  = self.get_value('infra', InfraConfig.ATTR_HOST_LOGSTASH)
+            InfraConfig.PORT_LOGSTASH  = self.get_value('infra', InfraConfig.ATTR_PORT_LOGSTASH)
+        except:
+            pass
+
         self.logs = dict()
 
 
@@ -79,7 +91,7 @@ class InfraConfig(object):
 
     def setup_logger(self, logger_name, level):
 
-        # Create logger with 'spam_application'
+        # Create logger
         logger = logging.getLogger(logger_name)
         logger.setLevel(level)
 
@@ -87,18 +99,23 @@ class InfraConfig(object):
         original_formatter = logging.Formatter(InfraConfig.FORMATTER)
         f = CustomFormatter(original_formatter)
 
-        # Create file handler which logs even debug messages
+        # Create rotating file handler
         rfh = logging.handlers.RotatingFileHandler('../{}.log'.format(logger_name), 'a',
                                                    InfraConfig.MAX_SIZE, InfraConfig.MAX_FILES)
         rfh.setLevel(level)
         rfh.setFormatter(f)
 
-        # create console handler with a higher log level
+        # Create console handler
         ch = logging.StreamHandler()
         ch.setLevel(level)
         ch.setFormatter(f)
 
-        # add the handlers to the logger
+        # Create logstash handler
+        if InfraConfig.HOST_LOGSTASH is not None and InfraConfig.PORT_LOGSTASH is not None:
+            lh = logstash.TCPLogstashHandler(InfraConfig.HOST_LOGSTASH, InfraConfig.PORT_LOGSTASH, version=1)
+            logger.addHandler(lh)
+
+        # Add the handlers to the logger
         logger.addHandler(rfh)
         logger.addHandler(ch)
         logger.propagate = 0
@@ -132,5 +149,4 @@ class InfraConfig(object):
         try:
             return self.config[section][key]
         except Exception as e:
-            print(e)
             raise InfraException(GenericErrorMessages.KEYFILE_ERROR)

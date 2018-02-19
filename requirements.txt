@@ -1,3 +1,4 @@
 pymongo
 nose
 coverage
+python-logstash
