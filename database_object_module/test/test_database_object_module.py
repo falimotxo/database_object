@@ -6,6 +6,7 @@ from nose.tools import assert_equal, assert_true
 from common import config
 from database_object_module.data_model import DatabaseObject, DatabaseObjectResult
 from database_object_module.database_object_module import DatabaseObjectModule
+from database_object_module.impl.access_database import AccessDatabase
 
 
 class DatabaseObjectTest1(DatabaseObject):
@@ -121,11 +122,11 @@ class TestDatabaseObjectModule(object):
 
         result_put = self.module.put_object(schema, object_name, data)
         inst_put = result_put.get_object_from_data()
-        id_put = inst_put[0].get_id()
+        id_put = inst_put[0].get_identifier()
 
-        result_get = self.module.get(schema, object_name, [('_id', '=', id_put)])
+        result_get = self.module.get(schema, object_name, [(AccessDatabase.ID_FIELD, '=', id_put)])
         inst_get = result_get.get_object_from_data(DatabaseObjectTest2())
-        id_get = inst_get[0].get_id()
+        id_get = inst_get[0].get_identifier()
 
         assert_equal(id_put, id_get)
 
@@ -147,15 +148,15 @@ class TestDatabaseObjectModule(object):
 
             assert_equal(result_put.code, DatabaseObjectResult.CODE_OK)
             inst_put = result_put.get_object_from_data()
-            id_put = inst_put[0].get_id()
+            id_put = inst_put[0].get_identifier()
             insert_id_list.append(id_put)
 
         for insert_id in insert_id_list:
-            result_get = self.module.get(schema, object_name, [('_id', '=', insert_id)])
+            result_get = self.module.get(schema, object_name, [(AccessDatabase.ID_FIELD, '=', insert_id)])
 
             assert_equal(result_get.code, DatabaseObjectResult.CODE_OK)
             inst_get = result_get.get_object_from_data()
-            id_get = inst_get[0].get_id()
+            id_get = inst_get[0].get_identifier()
             get_id_list.append(id_get)
 
         assert_equal(insert_id_list, get_id_list)
@@ -174,24 +175,27 @@ class TestDatabaseObjectModule(object):
         object_name = DatabaseObjectTest2.__name__
         for i in range(max_iteration):
             data = DatabaseObjectTest2()
+
+            start = time.perf_counter()
             result_put = self.module.put_object(schema, object_name, data)
+            elapsed_time = round((time.perf_counter() - start) * 1000, 2)
+            print("Insertion {} time {} ms.".format(i, elapsed_time))
 
             assert_equal(result_put.code, DatabaseObjectResult.CODE_OK)
+
             inst_put = result_put.get_object_from_data()
-            id_put = inst_put[0].get_id()
+            id_put = inst_put[0].get_identifier()
             insert_id_list.append(id_put)
 
-        start_get_time = time.time()
+        start = time.perf_counter()
         result_get = self.module.get(schema, object_name)
-        end_get_time = time.time()
-        delta_get_time = end_get_time - start_get_time
-        print(" - Total results obtained {} in {} seconds.".format(max_iteration, delta_get_time))
+        elapsed_time = round((time.perf_counter() - start) * 1000, 2)
+        print("Total results obtained {} in {} ms.".format(max_iteration, elapsed_time))
 
-        start_object_time = time.time()
+        start = time.perf_counter()
         inst_get = result_get.get_object_from_data()
-        end_object_time = time.time()
-        delta_object_time = end_object_time - start_object_time
-        print(" - Total objects obtained {} in {} seconds.".format(max_iteration, delta_object_time))
+        elapsed_time = round((time.perf_counter() - start) * 1000, 2)
+        print("Total objects obtained {} in {} ms.".format(max_iteration, elapsed_time))
 
         assert_equal(len(inst_get), max_iteration)
 
@@ -250,11 +254,11 @@ class TestDatabaseObjectModule(object):
 
         result_put = self.module.put_object(schema, object_name, data)
         inst_put = result_put.get_object_from_data()
-        id_put = inst_put[0].get_id()
+        id_put = inst_put[0].get_identifier()
 
         result_get = self.module.get(schema, object_name, [('bool_arg', '=', False)])
         inst_get = result_get.get_object_from_data()
-        id_get = inst_get[0].get_id()
+        id_get = inst_get[0].get_identifier()
 
         assert_equal(id_put, id_get)
 
@@ -269,11 +273,11 @@ class TestDatabaseObjectModule(object):
 
         result_put = self.module.put_object(schema, object_name, data)
         inst_put = result_put.get_object_from_data()
-        id_put = inst_put[0].get_id()
+        id_put = inst_put[0].get_identifier()
 
         result_get = self.module.get(schema, object_name, [('str_arg', '=', 'cadena de texto')])
         inst_get = result_get.get_object_from_data(DatabaseObjectTest2())
-        id_get = inst_get[0].get_id()
+        id_get = inst_get[0].get_identifier()
 
         assert_equal(id_put, id_get)
 
@@ -288,11 +292,11 @@ class TestDatabaseObjectModule(object):
 
         result_put = self.module.put_object(schema, object_name, data)
         inst_put = result_put.get_object_from_data()
-        id_put = inst_put[0].get_id()
+        id_put = inst_put[0].get_identifier()
 
         result_get = self.module.get(schema, object_name, [('float_arg', '=', 7.9)])
         inst_get = result_get.get_object_from_data(DatabaseObjectTest2())
-        id_get = inst_get[0].get_id()
+        id_get = inst_get[0].get_identifier()
 
         assert_equal(id_put, id_get)
 
@@ -307,11 +311,11 @@ class TestDatabaseObjectModule(object):
 
         result_put = self.module.put_object(schema, object_name, data)
         inst_put = result_put.get_object_from_data()
-        id_put = inst_put[0].get_id()
+        id_put = inst_put[0].get_identifier()
 
         result_get = self.module.get(schema, object_name, [('list_arg', '=', ['one thing', 'another thing'])])
         inst_get = result_get.get_object_from_data(DatabaseObjectTest2())
-        id_get = inst_get[0].get_id()
+        id_get = inst_get[0].get_identifier()
 
         assert_equal(id_put, id_get)
 
@@ -326,12 +330,12 @@ class TestDatabaseObjectModule(object):
 
         result_put = self.module.put_object(schema, object_name, data)
         inst_put = result_put.get_object_from_data()
-        id_put = inst_put[0].get_id()
+        id_put = inst_put[0].get_identifier()
 
         result_get = self.module.get(schema, object_name, [('int_arg', '=', 5), ('bool_arg', '=', False),
                                                            ('str_arg', '=', 'cadena de texto')])
         inst_get = result_get.get_object_from_data(DatabaseObjectTest2())
-        id_get = inst_get[0].get_id()
+        id_get = inst_get[0].get_identifier()
 
         assert_equal(id_put, id_get)
 
@@ -366,7 +370,7 @@ class TestDatabaseObjectModule(object):
         for i in range(max_iteration):
             data = DatabaseObjectTest2(i)
             result_put = self.module.put_object(schema, object_name, data)
-            insert_id_list.append(result_put.get_object_from_data()[0].get_id)
+            insert_id_list.append(result_put.get_object_from_data()[0].get_identifier)
 
         result_get = self.module.get(schema, object_name, [('user_arg', 'in', list_arg)])
         inst_get = result_get.get_object_from_data()
@@ -387,7 +391,7 @@ class TestDatabaseObjectModule(object):
         for i in range(max_iteration):
             data = DatabaseObjectTest2(i)
             result_put = self.module.put_object(schema, object_name, data)
-            insert_id_list.append(result_put.get_object_from_data()[0].get_id)
+            insert_id_list.append(result_put.get_object_from_data()[0].get_identifier)
 
         result_get = self.module.get(schema, object_name, [('user_arg', 'out', list_arg)])
         inst_get = result_get.get_object_from_data()
@@ -408,7 +412,7 @@ class TestDatabaseObjectModule(object):
         for i in range(max_iteration):
             data = DatabaseObjectTest2(i)
             result_put = self.module.put_object(schema, object_name, data)
-            insert_id_list.append(result_put.get_object_from_data()[0].get_id)
+            insert_id_list.append(result_put.get_object_from_data()[0].get_identifier)
 
         result_get = self.module.get(schema, object_name, [('user_arg', '>', number_to_compare)])
         inst_get = result_get.get_object_from_data()
@@ -429,7 +433,7 @@ class TestDatabaseObjectModule(object):
         for i in range(max_iteration):
             data = DatabaseObjectTest2(i)
             result_put = self.module.put_object(schema, object_name, data)
-            insert_id_list.append(result_put.get_object_from_data()[0].get_id)
+            insert_id_list.append(result_put.get_object_from_data()[0].get_identifier)
 
         result_get = self.module.get(schema, object_name, [('user_arg', '<', number_to_compare)])
         inst_get = result_get.get_object_from_data()
@@ -450,7 +454,7 @@ class TestDatabaseObjectModule(object):
         for i in range(max_iteration):
             data = DatabaseObjectTest2(i)
             result_put = self.module.put_object(schema, object_name, data)
-            insert_id_list.append(result_put.get_object_from_data()[0].get_id)
+            insert_id_list.append(result_put.get_object_from_data()[0].get_identifier)
 
         result_get = self.module.get(schema, object_name, [('user_arg', '>=', number_to_compare)])
         inst_get = result_get.get_object_from_data()
@@ -471,7 +475,7 @@ class TestDatabaseObjectModule(object):
         for i in range(max_iteration):
             data = DatabaseObjectTest2(i)
             result_put = self.module.put_object(schema, object_name, data)
-            insert_id_list.append(result_put.get_object_from_data()[0].get_id)
+            insert_id_list.append(result_put.get_object_from_data()[0].get_identifier)
 
         result_get = self.module.get(schema, object_name, [('user_arg', '<=', number_to_compare)])
         inst_get = result_get.get_object_from_data()
@@ -492,7 +496,7 @@ class TestDatabaseObjectModule(object):
         for i in range(max_iteration):
             data = DatabaseObjectTest2(i)
             result_put = self.module.put_object(schema, object_name, data)
-            insert_id_list.append(result_put.get_object_from_data()[0].get_id)
+            insert_id_list.append(result_put.get_object_from_data()[0].get_identifier)
 
         result_get = self.module.get(schema, object_name, [('user_arg', '!=', number_to_compare)])
         inst_get = result_get.get_object_from_data()
@@ -513,7 +517,7 @@ class TestDatabaseObjectModule(object):
         for i in range(max_iteration):
             data = DatabaseObjectTest2(i)
             result_put = self.module.put_object(schema, object_name, data)
-            insert_id_list.append(result_put.get_object_from_data()[0].get_id)
+            insert_id_list.append(result_put.get_object_from_data()[0].get_identifier)
 
         result_get = self.module.get(schema, object_name, [('user_arg', '=', number_to_compare)])
         inst_get = result_get.get_object_from_data(obj=DatabaseObjectTest2())[0]

@@ -9,7 +9,7 @@ class AccessDatabase(object):
     __metaclass__ = abc.ABCMeta
 
     # Field _id
-    ID_FIELD = '_id'
+    ID_FIELD = '_identifier'
 
     # Field _timestamp
     TIMESTAMP_FIELD = '_timestamp'
@@ -19,6 +19,9 @@ class AccessDatabase(object):
 
     # Field _deleted_count
     UPDATED_COUNT = '_updated_count'
+
+    # Separator between schema and sub_schema
+    SEPARATOR = '_'
 
     def __init__(self, connection_url: str) -> None:
         """
@@ -142,24 +145,17 @@ class AccessDatabase(object):
 
         pass
 
-    # def recover_connection(self, recovery_attempts: int, wait_seconds: int) -> None:
-    #     """
-    #     Check that the connection is alive and try to recover it not.
-    #
-    #     :return: this function return nothing
-    #     :rtype: None
-    #     """
-    #
-    #     current_attemps = 0
-    #     while not self._check_connection():
-    #         try:
-    #             self._close_database()
-    #             time.sleep(0.01)
-    #             self._connect_database()
-    #
-    #         except DatabaseObjectException:
-    #             current_attemps += 1
-    #             if current_attemps > recovery_attempts:
-    #                 raise DatabaseObjectException(ErrorMessages.CONNECTION_ERROR)
-    #
-    #             time.sleep(wait_seconds)
+    @abc.abstractclassmethod
+    def get_index(self) -> dict:
+        """
+        Returns index in dictionary format
+
+        :return:
+        :rtype: None
+        """
+
+        pass
+
+    @staticmethod
+    def get_schema_collection(schema: str, sub_schema: str) -> str:
+        return schema + AccessDatabase.SEPARATOR + sub_schema

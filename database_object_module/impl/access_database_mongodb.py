@@ -1,18 +1,13 @@
 import logging
-import time
 
 from pymongo import MongoClient, collection, errors, ASCENDING
 from pymongo.errors import ServerSelectionTimeoutError
 
 from common.tools.decorators import log_function
-# from database_object_module.database_object_module import DatabaseObjectModule
 from database_object_module import MODULE_NAME
 from database_object_module.data_model import DatabaseObjectException, ErrorMessages
 from database_object_module.impl.access_database import AccessDatabase
 
-# import database_object_module.database_object_module
-
-# logger = logging.getLogger(__name__)
 logger = logging.getLogger(MODULE_NAME)
 
 
@@ -31,6 +26,9 @@ class AccessDatabaseMongoDB(AccessDatabase):
 
     # Mongo update operators
     MONGO_UPDATE_OPERATOR = '$set'
+
+    # Mongo ObjectId field
+    OBJECT_ID_FIELD = '_id'
 
     def __init__(self, connection_url: str) -> None:
         """
@@ -52,6 +50,11 @@ class AccessDatabaseMongoDB(AccessDatabase):
 
             # Get database from URL connection
             self.db = self.connection.get_database()
+
+            # Initialize caches
+            self.cache_collections = dict()
+            for collection_name in self.db.collection_names():
+                self.cache_collections[collection_name] = self.db[collection_name]
 
         except errors.ConfigurationError:
             raise DatabaseObjectException(ErrorMessages.CONFIGURATION_ERROR)
@@ -94,8 +97,7 @@ class AccessDatabaseMongoDB(AccessDatabase):
 
             # For each data: recover _id, set to data and add to output list
             for element in mongo_result:
-                str_id = AccessDatabaseMongoDB._mongoid_to_str(element[AccessDatabase.ID_FIELD])
-                element[AccessDatabase.ID_FIELD] = str_id
+                del element[AccessDatabaseMongoDB.OBJECT_ID_FIELD]
                 output_list.append(element)
 
             # Return the list with the updated elements
@@ -128,16 +130,10 @@ class AccessDatabaseMongoDB(AccessDatabase):
             # Get collection creating it if not exists
             mongo_collect = self._get_collection(schema, create_collection=True)
 
-            # Change _id to ObjectId because mongodb needs it
-            mongo_data = AccessDatabaseMongoDB._create_mongo_data(data, create_timestamp=True)
-
             # Insert data and recover _id
-            mongo_result = mongo_collect.insert_one(mongo_data)
-            mongo_id = mongo_result.inserted_id
+            mongo_collect.insert_one(data)
 
-            # Convert _id from ObjectId native format for _id to String, and add to output list in dictionary format
-            str_id = AccessDatabaseMongoDB._mongoid_to_str(mongo_id)
-            output_list.append({AccessDatabase.ID_FIELD: str_id})
+            output_list.append({AccessDatabase.ID_FIELD: data[AccessDatabase.ID_FIELD]})
 
             # Return the list with the updated elements
             return output_list
@@ -179,9 +175,8 @@ class AccessDatabaseMongoDB(AccessDatabase):
             # Get collection from mongodb
             mongo_collect = self._get_collection(schema)
 
-            # Change _id to ObjectId because mongodb needs it
-            mongo_data = AccessDatabaseMongoDB._create_mongo_data(data)
-            mongo_data_update = {AccessDatabaseMongoDB.MONGO_UPDATE_OPERATOR: mongo_data}
+            # Define data to update
+            mongo_data_update = {AccessDatabaseMongoDB.MONGO_UPDATE_OPERATOR: data}
 
             # Get criteria in mongodb language
             mongo_criteria = AccessDatabaseMongoDB._create_mongo_criteria(conditions, criteria, native_criteria)
@@ -268,14 +263,16 @@ class AccessDatabaseMongoDB(AccessDatabase):
         """
 
         # If collection exists, get it.
-        if schema in self.db.collection_names():
-            mongo_collect = self.db[schema]
+
+        if schema in self.cache_collections.keys():
+            mongo_collect = self.cache_collections[schema]
 
         # If the function can create it, create it
         elif create_collection:
             mongo_collect = self.db.create_collection(schema)
             mongo_collect.create_index([(AccessDatabase.TIMESTAMP_FIELD, ASCENDING)],
                                        name=AccessDatabase.TIMESTAMP_FIELD, unique=True)
+            self.cache_collections[schema] = mongo_collect
 
         # In other case, throw the exception
         else:
@@ -300,7 +297,7 @@ class AccessDatabaseMongoDB(AccessDatabase):
         except (errors.ConnectionFailure, errors.ServerSelectionTimeoutError):
             raise DatabaseObjectException(ErrorMessages.CONNECTION_ERROR)
 
-    def close_connection(self):
+    def close_connection(self) -> None:
         self.connection.close()
 
     def check_connection(self) -> bool:
@@ -323,43 +320,42 @@ class AccessDatabaseMongoDB(AccessDatabase):
             logger.debug('Mongodb connection is dead', exc_info=True)
             return False
 
-    @staticmethod
-    def _create_mongo_data(data: dict, create_timestamp: bool = False) -> dict:
+    def get_index(self) -> dict:
         """
-        Create a data with mongo format
-
-        :param data: data to insert into the database
-        :type data: dict
-
-        :param create_timestamp: create timestamp or not
-        :type create_timestamp: bool
-
-        :return: data with mongo format
-        :rtype: dict
+        Recover last index from all collections
+        :return: dict of dict
         """
-
-        # Create a dictionary with value of the input data
-        mongo_data = dict()
-        mongo_data.update(data)
-
         try:
-            # Add the field timestamp if the function should do it
-            if create_timestamp:
-                timestamp = int(time.time() * 10000000)
-                mongo_data[AccessDatabase.TIMESTAMP_FIELD] = timestamp
+            output = dict()
 
-            # Delete timestamp in other case
-            else:
-                del mongo_data[AccessDatabase.TIMESTAMP_FIELD]
+            # Get collections
+            collections = self.db.collection_names()
+            for collection_name in collections:
+                # Recover collection
+                c = self.db[collection_name]
 
-            # Delete ID key from mongo data, MongoDB will add this field
-            del mongo_data[AccessDatabase.ID_FIELD]
+                # Find lasta data inserted
+                sort_filter = '{' + AccessDatabaseMongoDB.OBJECT_ID_FIELD + ':-1}'
+                mongo_result = c.find({}).sort(sort_filter).limit(1)
 
-            # Return the mongo data
-            return mongo_data
+                result = [element[AccessDatabase.ID_FIELD] for element in mongo_result]
+                identifier = 0 if len(result) == 0 else result[0]
 
-        except KeyError:
-            raise DatabaseObjectException(ErrorMessages.DATA_ERROR)
+                # Recover schema and sub_schema
+                collection_name_splitted = collection_name.split(AccessDatabase.SEPARATOR)
+                schema, sub_schema = collection_name_splitted[0], collection_name_splitted[1]
+
+                # Create dict with index
+                dict_sub_schema = dict()
+                dict_sub_schema[sub_schema] = identifier
+                output[schema] = dict_sub_schema
+
+            return output
+
+        except ServerSelectionTimeoutError:
+            raise DatabaseObjectException(ErrorMessages.CONNECTION_ERROR)
+        except Exception:
+            raise DatabaseObjectException(ErrorMessages.GET_ERROR)
 
     @staticmethod
     def _create_mongo_criteria(conditions: list, criteria: str, native_criteria: bool) -> dict:
@@ -391,20 +387,18 @@ class AccessDatabaseMongoDB(AccessDatabase):
 
                     # If the value to compare is a list, one list of ObjectId must be generated
                     if isinstance(condition[2], (list, tuple)):
-                        value_compare = [AccessDatabaseMongoDB._str_to_mongoid(element) for element in condition[2]]
                         filter_condition = {
-                            condition[0]: {AccessDatabaseMongoDB.MONGO_OPERATORS[condition[1]]: value_compare}
+                            condition[0]: {AccessDatabaseMongoDB.MONGO_OPERATORS[condition[1]]: conditions[2]}
                         }
 
-                    # If the value is empty, all elements must be gotten back
-                    elif len(condition[2]) == 0:
+                    # If the value is zero, negative or None, all elements must be recovered
+                    elif condition[2] is None or condition[2] <= 0:
                         filter_condition = {}
 
                     # Else the ObjectId  must be generated
                     else:
-                        value_compare = AccessDatabaseMongoDB._str_to_mongoid(condition[2])
                         filter_condition = {
-                            condition[0]: {AccessDatabaseMongoDB.MONGO_OPERATORS[condition[1]]: value_compare}
+                            condition[0]: {AccessDatabaseMongoDB.MONGO_OPERATORS[condition[1]]: condition[2]}
                         }
 
                 # The rest of the variables do not have special cases
@@ -427,40 +421,3 @@ class AccessDatabaseMongoDB(AccessDatabase):
 
         except Exception:
             raise DatabaseObjectException(ErrorMessages.CRITERIA_ERROR)
-
-    @staticmethod
-    def _str_to_mongoid(str_id: str) -> collection.ObjectId:
-        """
-        Create mongo_id from str_id
-
-        :param str_id: id of the object in string format
-        :type str_id: str
-
-        :return: id of the object in ObjectId format
-        :rtype: ObjectId
-        """
-
-        try:
-            # Generate ObjectId from hex of the input string
-            mongo_id = collection.ObjectId(bytes.fromhex(str_id))
-
-            # Return the mongo ID in ObjectId format.
-            return mongo_id
-
-        except (errors.InvalidId, ValueError):
-            raise DatabaseObjectException(ErrorMessages.ID_ERROR)
-
-    @staticmethod
-    def _mongoid_to_str(mongo_id: collection.ObjectId) -> str:
-        """
-        Generate str_id from mongo_id
-
-        :param mongo_id: id of the object in ObjectId format
-        :type mongo_id: ObjectId
-
-        :return: id of the object in string format
-        :rtype: str
-        """
-
-        # Return the mongo ID in string format.
-        return str(mongo_id)

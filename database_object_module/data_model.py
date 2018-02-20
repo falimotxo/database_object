@@ -14,21 +14,21 @@ class DatabaseObject(object):
         """
 
         # Create internal variables
-        self._id = ''
+        self._identifier = None
         self._timestamp = None
         self._deleted_count = 0
         self._updated_count = 0
 
-    def get_id(self) -> str:
+    def get_identifier(self) -> int:
         """
         Get value of ID variable
 
         :return: value of ID
-        :rtype: str
+        :rtype: int
         """
 
         # Return the ID
-        return self._id
+        return self._identifier
 
     def get_timestamp(self) -> int:
         return self._timestamp
@@ -67,7 +67,7 @@ class DatabaseObjectResult(object):
         self.msg = msg
         self.exception = exception
 
-    def get_object_from_data(self, obj=DatabaseObject()):
+    def get_object_from_data(self, obj=DatabaseObject()) -> list:
 
         if self.code == self.CODE_KO:
             raise (DatabaseObjectException(ErrorMessages.KO_ERROR))
@@ -162,3 +162,4 @@ class ErrorMessages(object):
     INHERITANCE_ERROR = 'Data must inherit from DatabaseObject'
     DISTINCT_ATTRIBUTES_ERROR = 'Attributes not are the same'
     KO_ERROR = 'KO error'
+    INDEX_VALUE_ERROR = 'Wrong value of id'

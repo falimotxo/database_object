@@ -1,4 +1,3 @@
-import logging
 import time
 
 from common import config
@@ -21,7 +20,7 @@ class DatabaseObjectModule(InfraModule):
     Main class of database access
     """
 
-    def __init__(self, config: InfraConfig) -> None:
+    def __init__(self, config_module: InfraConfig) -> None:
         """
         Constructor that gets configuration, database name and connection instance
         """
@@ -31,12 +30,16 @@ class DatabaseObjectModule(InfraModule):
         logger.info(__name__)
 
         try:
-            name_database = config.get_value(MODULE_NAME, 'name_database')
-            connection_database = config.get_value(MODULE_NAME, 'connection_database')
+            name_database = config_module.get_value(MODULE_NAME, 'name_database')
+            connection_database = config_module.get_value(MODULE_NAME, 'connection_database')
 
             # Connect to datastore
             self.access_db = AccessDatabaseFactory.get_access_database(name_database, connection_database)
             self.is_connected = True
+
+            # Cache index. This method regenerates index data reading last objects inserted
+            self.cache_index = self.access_db.get_index()
+
             logger.info('Datastore connected')
 
         except DatabaseObjectException:
@@ -48,12 +51,12 @@ class DatabaseObjectModule(InfraModule):
         logger.info('CheckConnection daemon started')
         logger.info('Accepting requests')
 
-    def exit(self):
+    def exit(self) -> None:
         self.daemon.shutdown()
         logger.info('SHUTDOWN MODULE')
 
     @log_function(logger)
-    def get(self, schema: str, sub_schema: str, conditions: list = ((AccessDatabase.ID_FIELD, '!=', ''),),
+    def get(self, schema: str, sub_schema: str, conditions: list = ((AccessDatabase.ID_FIELD, '!=', None),),
             criteria: str = '', native_criteria: bool = False) -> DatabaseObjectResult:
         """
         Get data from data store
@@ -83,7 +86,7 @@ class DatabaseObjectModule(InfraModule):
                 logger.error('Error opening connection to datastore', exc_info=True)
                 raise DatabaseObjectException(ErrorMessages.CONNECTION_ERROR)
 
-            schema_collection = DatabaseObjectModule._get_schema_collection(schema, sub_schema)
+            schema_collection = AccessDatabase.get_schema_collection(schema, sub_schema)
             ret = self.access_db.get(schema_collection, conditions, criteria, native_criteria)
             return DatabaseObjectModule._get_data_object_result_from_json('get', result=ret)
 
@@ -148,8 +151,20 @@ class DatabaseObjectModule(InfraModule):
 
             # Validate data, checking that object has mandatory fields
             self._validate_data(data)
-            schema_collection = DatabaseObjectModule._get_schema_collection(schema, sub_schema)
+
+            # Check index and set index to data
+            next_index = self._check_index(data, schema, sub_schema)
+            data[AccessDatabase.ID_FIELD] = next_index
+
+            # Set timestamp attribute
+            data[AccessDatabase.TIMESTAMP_FIELD] = int(time.time() * 10000000)
+
+            schema_collection = AccessDatabase.get_schema_collection(schema, sub_schema)
             ret = self.access_db.put(schema_collection, data)
+
+            # Update cache index
+            self.cache_index[schema][sub_schema] = next_index
+
             return DatabaseObjectModule._get_data_object_result_from_json('put', result=ret)
 
         except DatabaseObjectException as e:
@@ -164,7 +179,7 @@ class DatabaseObjectModule(InfraModule):
 
     @log_function(logger)
     def update_object(self, schema: str, sub_schema: str, data: DatabaseObject,
-                      conditions: list = ((AccessDatabase.ID_FIELD, '!=', ''),), criteria: str = '',
+                      conditions: list = ((AccessDatabase.ID_FIELD, '!=', None),), criteria: str = '',
                       native_criteria: bool = False) -> DatabaseObjectResult:
         """
         Update data in object store. This method will update all object data defined in "data" attribute
@@ -234,8 +249,15 @@ class DatabaseObjectModule(InfraModule):
                 logger.error('Error opening connection to datastore', exc_info=True)
                 raise DatabaseObjectException(ErrorMessages.CONNECTION_ERROR)
 
-            schema_collection = DatabaseObjectModule._get_schema_collection(schema, sub_schema)
+            # Delete all private attributes. It is forbidden to modify this attributes
+            del data[AccessDatabase.ID_FIELD]
+            del data[AccessDatabase.TIMESTAMP_FIELD]
+            del data[AccessDatabase.UPDATED_COUNT]
+            del data[AccessDatabase.DELETED_COUNT]
+
+            schema_collection = AccessDatabase.get_schema_collection(schema, sub_schema)
             ret = self.access_db.update(schema_collection, data, conditions, criteria, native_criteria)
+
             return DatabaseObjectModule._get_data_object_result_from_json('update', result=ret)
 
         except DatabaseObjectException as e:
@@ -249,7 +271,7 @@ class DatabaseObjectModule(InfraModule):
             return DatabaseObjectModule._get_data_object_result_from_json('update', exception=e)
 
     @log_function(logger)
-    def remove(self, schema: str, sub_schema: str, conditions: list = ((AccessDatabase.ID_FIELD, '!=', ''),),
+    def remove(self, schema: str, sub_schema: str, conditions: list = ((AccessDatabase.ID_FIELD, '!=', None),),
                criteria: str = '',
                native_criteria: bool = False) -> DatabaseObjectResult:
         """
@@ -280,7 +302,7 @@ class DatabaseObjectModule(InfraModule):
                 logger.error('Error opening connection to datastore', exc_info=True)
                 raise DatabaseObjectException(ErrorMessages.CONNECTION_ERROR)
 
-            schema_collection = DatabaseObjectModule._get_schema_collection(schema, sub_schema)
+            schema_collection = AccessDatabase.get_schema_collection(schema, sub_schema)
             ret = self.access_db.remove(schema_collection, conditions, criteria, native_criteria)
             return DatabaseObjectModule._get_data_object_result_from_json('remove', result=ret)
 
@@ -294,9 +316,32 @@ class DatabaseObjectModule(InfraModule):
             logger.error('Error removing data from datastore', exc_info=True)
             return DatabaseObjectModule._get_data_object_result_from_json('remove', exception=e)
 
-    @staticmethod
-    def _get_schema_collection(schema: str, sub_schema: str) -> str:
-        return schema + '_' + sub_schema
+    def _check_index(self, data: dict, schema: str, sub_schema: str) -> int:
+        """
+        Check index of data to insert
+        :param data: data to insert
+        :param schema: schema to insert
+        :param sub_schema: sub_schema to insert
+        :return: next index of the data or exception
+        """
+
+        # Check that schema and sub_schema exists, and if not then create
+        if schema not in self.cache_index.keys():
+            self.cache_index[schema] = dict()
+            self.cache_index[schema][sub_schema] = 0
+        elif sub_schema not in self.cache_index[schema].keys():
+            self.cache_index[schema][sub_schema] = 0
+
+        # If not exists _id, then create a new _id from cache
+        # If exists _id, then check that is greather than last inserted _id. If not then raise excepcion
+        if data[AccessDatabase.ID_FIELD] is None:
+            next_index = self.cache_index[schema][sub_schema] + 1
+        else:
+            next_index = data[AccessDatabase.ID_FIELD]
+            if next_index <= self.cache_index[schema][sub_schema]:
+                raise DatabaseObjectException(ErrorMessages.INDEX_VALUE_ERROR)
+
+        return next_index
 
     @staticmethod
     def _validate_data(data: dict) -> None:
@@ -323,8 +368,6 @@ class DatabaseObjectModule(InfraModule):
         :return: database object result with information about output
         """
 
-        # TODO
-
         # Detected exception. It is convenient to detect all type of exceptions
         if exception is not None:
             return DatabaseObjectResult(DatabaseObjectResult.CODE_KO, msg=str(exception),
@@ -339,13 +382,11 @@ class DatabaseObjectModule(InfraModule):
 
 class CheckConnectionThread(TaskThread):
 
-    # logger = logging.getLogger(DatabaseObjectModule.MODULE_NAME)
-
-    def __init__(self, dom: DatabaseObjectModule):
+    def __init__(self, dom: DatabaseObjectModule) -> None:
         TaskThread.__init__(self)
         self.dom = dom
 
-    def task(self):
+    def task(self) -> None:
         if self.dom.is_connected:
             return
 
@@ -358,4 +399,3 @@ class CheckConnectionThread(TaskThread):
             logger.info('Connection restored')
         except DatabaseObjectException:
             logger.critical('Connection can not be restored. Trying ...')
-            pass
