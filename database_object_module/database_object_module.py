@@ -27,8 +27,6 @@ class DatabaseObjectModule(InfraModule):
 
         logger.info('INIT MODULE ' + MODULE_NAME)
 
-        logger.info(__name__)
-
         try:
             name_database = config_module.get_value(MODULE_NAME, 'name_database')
             connection_database = config_module.get_value(MODULE_NAME, 'connection_database')
