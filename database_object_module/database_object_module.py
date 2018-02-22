@@ -35,8 +35,9 @@ class DatabaseObjectModule(InfraModule):
             self.access_db = AccessDatabaseFactory.get_access_database(name_database, connection_database)
             self.is_connected = True
 
-            # Cache index. This method regenerates index data reading last objects inserted
-            self.cache_index = self.access_db.get_index()
+            # Cache index. This method regenerates index data reading last objects inserted when inserting data
+            self.cache_index = dict()
+            # self.cache_index = self.access_db.get_index()
 
             logger.info('Datastore connected')
 
@@ -150,18 +151,20 @@ class DatabaseObjectModule(InfraModule):
             # Validate data, checking that object has mandatory fields
             self._validate_data(data)
 
+            # Recover collection joining schema and sub_schema
+            schema_collection = AccessDatabase.get_schema_collection(schema, sub_schema)
+
             # Check index and set index to data
-            next_index = self._check_index(data, schema, sub_schema)
+            next_index = self._check_index(data, schema_collection)
             data[AccessDatabase.ID_FIELD] = next_index
 
             # Set timestamp attribute
             data[AccessDatabase.TIMESTAMP_FIELD] = int(time.time() * 10000000)
 
-            schema_collection = AccessDatabase.get_schema_collection(schema, sub_schema)
             ret = self.access_db.put(schema_collection, data)
 
             # Update cache index
-            self.cache_index[schema][sub_schema] = next_index
+            self.cache_index[schema_collection] = next_index
 
             return DatabaseObjectModule._get_data_object_result_from_json('put', result=ret)
 
@@ -314,29 +317,25 @@ class DatabaseObjectModule(InfraModule):
             logger.error('Error removing data from datastore', exc_info=True)
             return DatabaseObjectModule._get_data_object_result_from_json('remove', exception=e)
 
-    def _check_index(self, data: dict, schema: str, sub_schema: str) -> int:
+    def _check_index(self, data: dict, schema_collection: str) -> int:
         """
         Check index of data to insert
         :param data: data to insert
-        :param schema: schema to insert
-        :param sub_schema: sub_schema to insert
+        :param schema_collection: collection to insert
         :return: next index of the data or exception
         """
 
-        # Check that schema and sub_schema exists, and if not then create
-        if schema not in self.cache_index.keys():
-            self.cache_index[schema] = dict()
-            self.cache_index[schema][sub_schema] = 0
-        elif sub_schema not in self.cache_index[schema].keys():
-            self.cache_index[schema][sub_schema] = 0
+        # Check that schema_collections exists, and if not then create
+        if schema_collection not in self.cache_index.keys():
+            self.cache_index[schema_collection] = self.access_db.get_index(schema_collection)
 
         # If not exists _id, then create a new _id from cache
         # If exists _id, then check that is greather than last inserted _id. If not then raise excepcion
         if data[AccessDatabase.ID_FIELD] is None:
-            next_index = self.cache_index[schema][sub_schema] + 1
+            next_index = self.cache_index[schema_collection] + 1
         else:
             next_index = data[AccessDatabase.ID_FIELD]
-            if next_index <= self.cache_index[schema][sub_schema]:
+            if next_index <= self.cache_index[schema_collection]:
                 raise DatabaseObjectException(ErrorMessages.INDEX_VALUE_ERROR)
 
         return next_index

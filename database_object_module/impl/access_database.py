@@ -146,12 +146,11 @@ class AccessDatabase(object):
         pass
 
     @abc.abstractclassmethod
-    def get_index(self) -> dict:
+    def get_index(self, schema_collection: str) -> int:
         """
-        Returns index in dictionary format
-
-        :return:
-        :rtype: None
+        Returns index as int of schema_collection
+        :param schema_collection: collection to search
+        :return: int
         """
 
         pass

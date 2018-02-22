@@ -62,6 +62,25 @@ class DatabaseObjectTest3(DatabaseObject):
         return str(self.__dict__)
 
 
+class DatabaseObjectTest4(DatabaseObject):
+
+    def __init__(self, user_arg=0) -> None:
+        DatabaseObject.__init__(self)
+        self.user_arg = user_arg
+        self.int_arg = int(5)
+        self.bool_arg = bool(False)
+        self.str_arg = str('cadena de texto')
+        self.list_arg = ['one thing', 'another thing']
+        self.float_arg = float(7.9)
+        self.dict_arg = {'key1': 'value1', 'key2': 'value2'}
+
+    def __repr__(self):
+        return str(self.__dict__)
+
+    def __str__(self):
+        return str(self.__dict__)
+
+
 class DatabaseObjectTestError(object):
 
     def __init__(self) -> None:

@@ -272,6 +272,8 @@ class AccessDatabaseMongoDB(AccessDatabase):
             mongo_collect = self.db.create_collection(schema)
             mongo_collect.create_index([(AccessDatabase.TIMESTAMP_FIELD, ASCENDING)],
                                        name=AccessDatabase.TIMESTAMP_FIELD, unique=True)
+            mongo_collect.create_index([(AccessDatabase.ID_FIELD, ASCENDING)],
+                                       name=AccessDatabase.ID_FIELD, unique=True)
             self.cache_collections[schema] = mongo_collect
 
         # In other case, throw the exception
@@ -320,42 +322,31 @@ class AccessDatabaseMongoDB(AccessDatabase):
             logger.debug('Mongodb connection is dead', exc_info=True)
             return False
 
-    def get_index(self) -> dict:
+    def get_index(self, schema_collection: str) -> int:
         """
         Recover last index from all collections
-        :return: dict of dict
+        :param schema_collection:
+
+        :return: last inserted index of schema_collection
         """
+
         try:
-            output = dict()
+            # Recover collection. Add collection to cache if not exists
+            c = self._get_collection(schema_collection, create_collection=True)
 
-            # Get collections
-            collections = self.db.collection_names()
-            for collection_name in collections:
-                # Recover collection
-                c = self.db[collection_name]
+            # Find lasta data inserted
+            sort_filter = '{' + AccessDatabaseMongoDB.OBJECT_ID_FIELD + ':-1}'
+            mongo_result = c.find({}).sort(sort_filter).limit(1)
 
-                # Find lasta data inserted
-                sort_filter = '{' + AccessDatabaseMongoDB.OBJECT_ID_FIELD + ':-1}'
-                mongo_result = c.find({}).sort(sort_filter).limit(1)
+            result = [element[AccessDatabase.ID_FIELD] for element in mongo_result]
+            identifier = 0 if len(result) == 0 else result[0]
 
-                result = [element[AccessDatabase.ID_FIELD] for element in mongo_result]
-                identifier = 0 if len(result) == 0 else result[0]
-
-                # Recover schema and sub_schema
-                collection_name_splitted = collection_name.split(AccessDatabase.SEPARATOR)
-                schema, sub_schema = collection_name_splitted[0], collection_name_splitted[1]
-
-                # Create dict with index
-                dict_sub_schema = dict()
-                dict_sub_schema[sub_schema] = identifier
-                output[schema] = dict_sub_schema
-
-            return output
+            return identifier
 
         except ServerSelectionTimeoutError:
             raise DatabaseObjectException(ErrorMessages.CONNECTION_ERROR)
         except Exception:
-            raise DatabaseObjectException(ErrorMessages.GET_ERROR)
+            raise DatabaseObjectException(ErrorMessages.GET_INDEX_ERROR)
 
     @staticmethod
     def _create_mongo_criteria(conditions: list, criteria: str, native_criteria: bool) -> dict:

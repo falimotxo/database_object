@@ -163,3 +163,4 @@ class ErrorMessages(object):
     DISTINCT_ATTRIBUTES_ERROR = 'Attributes not are the same'
     KO_ERROR = 'KO error'
     INDEX_VALUE_ERROR = 'Wrong value of id'
+    GET_INDEX_ERROR = 'Error recovering index'
