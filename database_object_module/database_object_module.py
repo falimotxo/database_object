@@ -37,7 +37,6 @@ class DatabaseObjectModule(InfraModule):
 
             # Cache index. This method regenerates index data reading last objects inserted when inserting data
             self.cache_index = dict()
-            # self.cache_index = self.access_db.get_index()
 
             logger.info('Datastore connected')
 
@@ -151,8 +150,9 @@ class DatabaseObjectModule(InfraModule):
             # Validate data, checking that object has mandatory fields
             self._validate_data(data)
 
-            # Recover collection joining schema and sub_schema
+            # Recover collection joining schema and sub_schema, same for index
             schema_collection = AccessDatabase.get_schema_collection(schema, sub_schema)
+            schema_collection_index = AccessDatabase.get_schema_collection_index(schema, sub_schema)
 
             # Check index and set index to data
             next_index = self._check_index(data, schema_collection)
@@ -165,6 +165,7 @@ class DatabaseObjectModule(InfraModule):
 
             # Update cache index
             self.cache_index[schema_collection] = next_index
+            self.access_db.update_index(schema_collection_index, next_index)
 
             return DatabaseObjectModule._get_data_object_result_from_json('put', result=ret)
 

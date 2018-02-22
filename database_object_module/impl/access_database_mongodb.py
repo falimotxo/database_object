@@ -53,8 +53,6 @@ class AccessDatabaseMongoDB(AccessDatabase):
 
             # Initialize caches
             self.cache_collections = dict()
-            for collection_name in self.db.collection_names():
-                self.cache_collections[collection_name] = self.db[collection_name]
 
         except errors.ConfigurationError:
             raise DatabaseObjectException(ErrorMessages.CONFIGURATION_ERROR)
@@ -267,7 +265,12 @@ class AccessDatabaseMongoDB(AccessDatabase):
         if schema in self.cache_collections.keys():
             mongo_collect = self.cache_collections[schema]
 
-        # If the function can create it, create it
+        # If not, if collection is in mongodb, get and cache
+        elif schema in self.db.collection_names():
+            mongo_collect = self.db[schema]
+            self.cache_collections[schema] = mongo_collect
+
+        # If not, if the function can create it, create it
         elif create_collection:
             mongo_collect = self.db.create_collection(schema)
             mongo_collect.create_index([(AccessDatabase.TIMESTAMP_FIELD, ASCENDING)],
@@ -347,6 +350,9 @@ class AccessDatabaseMongoDB(AccessDatabase):
             raise DatabaseObjectException(ErrorMessages.CONNECTION_ERROR)
         except Exception:
             raise DatabaseObjectException(ErrorMessages.GET_INDEX_ERROR)
+
+    def update_index(self, schema_collection_index: str, value: int) -> None:
+
 
     @staticmethod
     def _create_mongo_criteria(conditions: list, criteria: str, native_criteria: bool) -> dict:

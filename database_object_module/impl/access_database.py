@@ -23,6 +23,9 @@ class AccessDatabase(object):
     # Separator between schema and sub_schema
     SEPARATOR = '_'
 
+    # Suffix for storing index
+    INDEX_ATTR = 'index'
+
     def __init__(self, connection_url: str) -> None:
         """
         Builder method of the class.
@@ -155,6 +158,22 @@ class AccessDatabase(object):
 
         pass
 
+    @abc.abstractclassmethod
+    def update_index(self, schema_collection_index: str, value: int) -> None:
+        """
+        Update index in datastore
+        :param schema_collection: schema to update index
+        :param value: value of index
+        :return: none, exception if error
+        """
+
+        pass
+
+
     @staticmethod
     def get_schema_collection(schema: str, sub_schema: str) -> str:
         return schema + AccessDatabase.SEPARATOR + sub_schema
+
+    @staticmethod
+    def get_schema_collection_idnex(schema: str, sub_schema: str) -> str:
+        return schema + AccessDatabase.SEPARATOR + sub_schema + AccessDatabase.INDEX_ATTR
