@@ -246,7 +246,7 @@ class AccessDatabaseMongoDB(AccessDatabase):
             else:
                 raise DatabaseObjectException(ErrorMessages.REMOVE_ERROR)
 
-    def _get_collection(self, schema: str, create_collection: bool = False) -> collection.Collection:
+    def _get_collection(self, schema: str, create_collection: bool = False, create_index: bool = True) -> collection.Collection:
         """
         Get collection from database
 
@@ -261,7 +261,6 @@ class AccessDatabaseMongoDB(AccessDatabase):
         """
 
         # If collection exists, get it.
-
         if schema in self.cache_collections.keys():
             mongo_collect = self.cache_collections[schema]
 
@@ -273,10 +272,11 @@ class AccessDatabaseMongoDB(AccessDatabase):
         # If not, if the function can create it, create it
         elif create_collection:
             mongo_collect = self.db.create_collection(schema)
-            mongo_collect.create_index([(AccessDatabase.TIMESTAMP_FIELD, ASCENDING)],
-                                       name=AccessDatabase.TIMESTAMP_FIELD, unique=True)
-            mongo_collect.create_index([(AccessDatabase.ID_FIELD, ASCENDING)],
-                                       name=AccessDatabase.ID_FIELD, unique=True)
+            if create_index:
+                mongo_collect.create_index([(AccessDatabase.TIMESTAMP_FIELD, ASCENDING)],
+                                           name=AccessDatabase.TIMESTAMP_FIELD, unique=True)
+                mongo_collect.create_index([(AccessDatabase.ID_FIELD, ASCENDING)],
+                                           name=AccessDatabase.ID_FIELD, unique=True)
             self.cache_collections[schema] = mongo_collect
 
         # In other case, throw the exception
@@ -352,6 +352,25 @@ class AccessDatabaseMongoDB(AccessDatabase):
             raise DatabaseObjectException(ErrorMessages.GET_INDEX_ERROR)
 
     def update_index(self, schema_collection_index: str, value: int) -> None:
+
+        try:
+            # Get collection from mongodb
+            mongo_collect = self._get_collection(schema_collection_index, create_collection=True, create_index=False)
+
+            # Define data to update
+            mongo_data_update = {AccessDatabaseMongoDB.MONGO_UPDATE_OPERATOR: AccessDatabase.INDEX_ATTR}
+
+            # Update all elements of collection index
+            mongo_result = mongo_collect.update_many({}, mongo_data_update)
+            modified_count = mongo_result.modified_count
+
+            if modified_count != 1:
+                raise DatabaseObjectException(ErrorMessages.UPDATE_INDEX_ERROR)
+
+        except ServerSelectionTimeoutError:
+            raise DatabaseObjectException(ErrorMessages.CONNECTION_ERROR)
+        except Exception:
+            raise DatabaseObjectException(ErrorMessages.UPDATE_INDEX_ERROR)
 
 
     @staticmethod

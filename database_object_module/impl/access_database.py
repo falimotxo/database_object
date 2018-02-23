@@ -176,4 +176,4 @@ class AccessDatabase(object):
 
     @staticmethod
     def get_schema_collection_idnex(schema: str, sub_schema: str) -> str:
-        return schema + AccessDatabase.SEPARATOR + sub_schema + AccessDatabase.INDEX_ATTR
+        return schema + AccessDatabase.SEPARATOR + sub_schema + AccessDatabase.SEPARATOR + AccessDatabase.INDEX_ATTR

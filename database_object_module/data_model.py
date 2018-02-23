@@ -164,3 +164,4 @@ class ErrorMessages(object):
     KO_ERROR = 'KO error'
     INDEX_VALUE_ERROR = 'Wrong value of id'
     GET_INDEX_ERROR = 'Error recovering index'
+    UPDATE_INDEX_ERROR = 'Error updating index in datastore'

@@ -28,6 +28,9 @@ class DatabaseObjectModule(InfraModule):
         logger.info('INIT MODULE ' + MODULE_NAME)
 
         try:
+            self.config_module = config_module
+
+            self.get_index_from_cache = config_module.get_value(MODULE_NAME, 'cache_index')
             name_database = config_module.get_value(MODULE_NAME, 'name_database')
             connection_database = config_module.get_value(MODULE_NAME, 'connection_database')
 
@@ -36,7 +39,7 @@ class DatabaseObjectModule(InfraModule):
             self.is_connected = True
 
             # Cache index. This method regenerates index data reading last objects inserted when inserting data
-            self.cache_index = dict()
+            self.cache_index = self.regenerate_index()
 
             logger.info('Datastore connected')
 
@@ -154,8 +157,8 @@ class DatabaseObjectModule(InfraModule):
             schema_collection = AccessDatabase.get_schema_collection(schema, sub_schema)
             schema_collection_index = AccessDatabase.get_schema_collection_index(schema, sub_schema)
 
-            # Check index and set index to data
-            next_index = self._check_index(data, schema_collection)
+            # Get next index and set index to data
+            next_index = self._get_next_index(data, schema_collection_index)
             data[AccessDatabase.ID_FIELD] = next_index
 
             # Set timestamp attribute
@@ -318,7 +321,7 @@ class DatabaseObjectModule(InfraModule):
             logger.error('Error removing data from datastore', exc_info=True)
             return DatabaseObjectModule._get_data_object_result_from_json('remove', exception=e)
 
-    def _check_index(self, data: dict, schema_collection: str) -> int:
+    def _get_next_index(self, data: dict, schema_collection: str) -> int:
         """
         Check index of data to insert
         :param data: data to insert
@@ -329,6 +332,7 @@ class DatabaseObjectModule(InfraModule):
         # Check that schema_collections exists, and if not then create
         if schema_collection not in self.cache_index.keys():
             self.cache_index[schema_collection] = self.access_db.get_index(schema_collection)
+
 
         # If not exists _id, then create a new _id from cache
         # If exists _id, then check that is greather than last inserted _id. If not then raise excepcion
