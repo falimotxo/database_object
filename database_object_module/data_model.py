@@ -146,13 +146,13 @@ class ErrorMessages(object):
     """
 
     # Error messages
-    CONNECTION_ERROR = 'Could not connect to database'
+    CONNECTION_ERROR = 'Could not connect to datastore'
     GET_ERROR = 'Error getting data'
     PUT_ERROR = 'Error storing data'
     UPDATE_ERROR = 'Error updating data'
     REMOVE_ERROR = 'Error removing data'
     REMOVE_NON_EXISTENT_WARNING = 'Schema or subschema does not exist'
-    CONFIGURATION_ERROR = 'Error configuring database'
+    CONFIGURATION_ERROR = 'Error configuring datastore'
     KEYFILE_ERROR = 'Not found the key'
     ID_ERROR = 'Error in the ID format'
     SCHEMA_ERROR = 'Error accessing non-existent schema'

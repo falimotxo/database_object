@@ -325,26 +325,34 @@ class AccessDatabaseMongoDB(AccessDatabase):
             logger.debug('Mongodb connection is dead', exc_info=True)
             return False
 
-    def get_index(self, schema_collection: str) -> int:
+    def get_last_index(self, schema: str, sub_schema: str) -> int:
         """
         Recover last index from all collections
-        :param schema_collection:
-
+        :param schema: schema to search
+        :param sub_schema: sub_schema to search
         :return: last inserted index of schema_collection
         """
 
+        schema_collection = self.get_schema_collection(schema, sub_schema)
+        schema_collection_index = self.get_schema_collection_index(schema, sub_schema)
+
         try:
-            # Recover collection. Add collection to cache if not exists
-            c = self._get_collection(schema_collection, create_collection=True)
+            # Recover collections. Add collection to cache if not exists
+            collection_index = self._get_collection(schema_collection_index, create_collection=True, create_index=False)
+            collection = self._get_collection(schema_collection, create_collection=True)
 
-            # Find lasta data inserted
+            # Find last data inserted from data collection
             sort_filter = '{' + AccessDatabaseMongoDB.OBJECT_ID_FIELD + ':-1}'
-            mongo_result = c.find({}).sort(sort_filter).limit(1)
-
+            mongo_result = collection.find({}).sort(sort_filter).limit(1)
             result = [element[AccessDatabase.ID_FIELD] for element in mongo_result]
-            identifier = 0 if len(result) == 0 else result[0]
+            identifier_collection = 0 if len(result) == 0 else result[0]
 
-            return identifier
+            # Find last index inserted from index collection
+            mongo_result = collection_index.find({})
+            result = [element[AccessDatabase.ID_FIELD] for element in mongo_result]
+            identifier_collection_index = 0 if len(result) == 0 else result[0]
+
+            return max(identifier_collection, identifier_collection_index)
 
         except ServerSelectionTimeoutError:
             raise DatabaseObjectException(ErrorMessages.CONNECTION_ERROR)
@@ -358,14 +366,11 @@ class AccessDatabaseMongoDB(AccessDatabase):
             mongo_collect = self._get_collection(schema_collection_index, create_collection=True, create_index=False)
 
             # Define data to update
-            mongo_data_update = {AccessDatabaseMongoDB.MONGO_UPDATE_OPERATOR: AccessDatabase.INDEX_ATTR}
+            mongo_data = {AccessDatabase.ID_FIELD: value}
+            mongo_data_update = {AccessDatabaseMongoDB.MONGO_UPDATE_OPERATOR: mongo_data}
 
             # Update all elements of collection index
-            mongo_result = mongo_collect.update_many({}, mongo_data_update)
-            modified_count = mongo_result.modified_count
-
-            if modified_count != 1:
-                raise DatabaseObjectException(ErrorMessages.UPDATE_INDEX_ERROR)
+            mongo_collect.update_many({}, mongo_data_update, upsert=True)
 
         except ServerSelectionTimeoutError:
             raise DatabaseObjectException(ErrorMessages.CONNECTION_ERROR)

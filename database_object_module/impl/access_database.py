@@ -149,10 +149,11 @@ class AccessDatabase(object):
         pass
 
     @abc.abstractclassmethod
-    def get_index(self, schema_collection: str) -> int:
+    def get_last_index(self, schema: str, sub_schema: str) -> int:
         """
         Returns index as int of schema_collection
-        :param schema_collection: collection to search
+        :param schema: schema to search
+        :param sub_schema: sub_schema to search
         :return: int
         """
 
@@ -162,7 +163,7 @@ class AccessDatabase(object):
     def update_index(self, schema_collection_index: str, value: int) -> None:
         """
         Update index in datastore
-        :param schema_collection: schema to update index
+        :param schema_collection_index: schema to update index
         :param value: value of index
         :return: none, exception if error
         """
@@ -175,5 +176,5 @@ class AccessDatabase(object):
         return schema + AccessDatabase.SEPARATOR + sub_schema
 
     @staticmethod
-    def get_schema_collection_idnex(schema: str, sub_schema: str) -> str:
+    def get_schema_collection_index(schema: str, sub_schema: str) -> str:
         return schema + AccessDatabase.SEPARATOR + sub_schema + AccessDatabase.SEPARATOR + AccessDatabase.INDEX_ATTR

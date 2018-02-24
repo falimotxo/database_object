@@ -30,7 +30,7 @@ class DatabaseObjectModule(InfraModule):
         try:
             self.config_module = config_module
 
-            self.get_index_from_cache = config_module.get_value(MODULE_NAME, 'cache_index')
+            self.use_cache = config_module.get_value(MODULE_NAME, 'use_cache')
             name_database = config_module.get_value(MODULE_NAME, 'name_database')
             connection_database = config_module.get_value(MODULE_NAME, 'connection_database')
 
@@ -38,8 +38,9 @@ class DatabaseObjectModule(InfraModule):
             self.access_db = AccessDatabaseFactory.get_access_database(name_database, connection_database)
             self.is_connected = True
 
-            # Cache index. This method regenerates index data reading last objects inserted when inserting data
-            self.cache_index = self.regenerate_index()
+            # Cache index. This variable has index data reading last objects inserted (or last index if there are not
+            # data in collection) when inserting data
+            self.cache_index = dict()
 
             logger.info('Datastore connected')
 
@@ -158,7 +159,7 @@ class DatabaseObjectModule(InfraModule):
             schema_collection_index = AccessDatabase.get_schema_collection_index(schema, sub_schema)
 
             # Get next index and set index to data
-            next_index = self._get_next_index(data, schema_collection_index)
+            next_index = self._get_next_index(data, schema, sub_schema)
             data[AccessDatabase.ID_FIELD] = next_index
 
             # Set timestamp attribute
@@ -167,7 +168,7 @@ class DatabaseObjectModule(InfraModule):
             ret = self.access_db.put(schema_collection, data)
 
             # Update cache index
-            self.cache_index[schema_collection] = next_index
+            self.cache_index[schema_collection_index] = next_index
             self.access_db.update_index(schema_collection_index, next_index)
 
             return DatabaseObjectModule._get_data_object_result_from_json('put', result=ret)
@@ -321,26 +322,30 @@ class DatabaseObjectModule(InfraModule):
             logger.error('Error removing data from datastore', exc_info=True)
             return DatabaseObjectModule._get_data_object_result_from_json('remove', exception=e)
 
-    def _get_next_index(self, data: dict, schema_collection: str) -> int:
+    def _get_next_index(self, data: dict, schema: str, sub_schema: str) -> int:
         """
         Check index of data to insert
         :param data: data to insert
-        :param schema_collection: collection to insert
+        :param schema: schema to search
+        :param sub_schema: sub_schema to search
         :return: next index of the data or exception
         """
 
-        # Check that schema_collections exists, and if not then create
-        if schema_collection not in self.cache_index.keys():
-            self.cache_index[schema_collection] = self.access_db.get_index(schema_collection)
+        # Recover collection index joining schema and sub_schema
+        schema_collection_index = AccessDatabase.get_schema_collection_index(schema, sub_schema)
+
+        # Check that schema_collections exists, and if not then create in cache_index
+        if schema_collection_index not in self.cache_index.keys():
+            self.cache_index[schema_collection_index] = self.access_db.get_last_index(schema, sub_schema)
 
 
-        # If not exists _id, then create a new _id from cache
-        # If exists _id, then check that is greather than last inserted _id. If not then raise excepcion
+        # If not exists _identifier, then create a new _identifier from cache
+        # If exists _identifier, then check that is greather than last inserted _identifier. If not then raise excepcion
         if data[AccessDatabase.ID_FIELD] is None:
-            next_index = self.cache_index[schema_collection] + 1
+            next_index = self.cache_index[schema_collection_index] + 1
         else:
             next_index = data[AccessDatabase.ID_FIELD]
-            if next_index <= self.cache_index[schema_collection]:
+            if next_index <= self.cache_index[schema_collection_index]:
                 raise DatabaseObjectException(ErrorMessages.INDEX_VALUE_ERROR)
 
         return next_index
