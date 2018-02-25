@@ -246,7 +246,8 @@ class AccessDatabaseMongoDB(AccessDatabase):
             else:
                 raise DatabaseObjectException(ErrorMessages.REMOVE_ERROR)
 
-    def _get_collection(self, schema: str, create_collection: bool = False, create_index: bool = True) -> collection.Collection:
+    def _get_collection(self, schema: str, create_collection: bool = False, create_index: bool = True) \
+            -> collection.Collection:
         """
         Get collection from database
 
@@ -339,11 +340,11 @@ class AccessDatabaseMongoDB(AccessDatabase):
         try:
             # Recover collections. Add collection to cache if not exists
             collection_index = self._get_collection(schema_collection_index, create_collection=True, create_index=False)
-            collection = self._get_collection(schema_collection, create_collection=True)
+            collection_data = self._get_collection(schema_collection, create_collection=True)
 
             # Find last data inserted from data collection
             sort_filter = '{' + AccessDatabaseMongoDB.OBJECT_ID_FIELD + ':-1}'
-            mongo_result = collection.find({}).sort(sort_filter).limit(1)
+            mongo_result = collection_data.find({}).sort(sort_filter).limit(1)
             result = [element[AccessDatabase.ID_FIELD] for element in mongo_result]
             identifier_collection = 0 if len(result) == 0 else result[0]
 
@@ -376,7 +377,6 @@ class AccessDatabaseMongoDB(AccessDatabase):
             raise DatabaseObjectException(ErrorMessages.CONNECTION_ERROR)
         except Exception:
             raise DatabaseObjectException(ErrorMessages.UPDATE_INDEX_ERROR)
-
 
     @staticmethod
     def _create_mongo_criteria(conditions: list, criteria: str, native_criteria: bool) -> dict:

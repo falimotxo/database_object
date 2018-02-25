@@ -38,9 +38,11 @@ class DatabaseObjectModule(InfraModule):
             self.access_db = AccessDatabaseFactory.get_access_database(name_database, connection_database)
             self.is_connected = True
 
-            # Cache index. This variable has index data reading last objects inserted (or last index if there are not
+            # Index cache. This variable has index data reading last objects inserted (or last index if there are not
             # data in collection) when inserting data
             self.cache_index = dict()
+
+            # Data cache
 
             logger.info('Datastore connected')
 
