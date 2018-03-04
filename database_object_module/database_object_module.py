@@ -340,7 +340,6 @@ class DatabaseObjectModule(InfraModule):
         if schema_collection_index not in self.cache_index.keys():
             self.cache_index[schema_collection_index] = self.access_db.get_last_index(schema, sub_schema)
 
-
         # If not exists _identifier, then create a new _identifier from cache
         # If exists _identifier, then check that is greather than last inserted _identifier. If not then raise excepcion
         if data[AccessDatabase.ID_FIELD] is None:

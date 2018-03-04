@@ -3,7 +3,7 @@ import ast
 from database_object_module.impl.access_database import AccessDatabase
 
 
-class DatabaseObject(object):
+class DatabaseObject:
     """
     Class of standard data input
     """
@@ -51,7 +51,7 @@ class DatabaseObject(object):
         raise NotImplementedError(ErrorMessages.REPR_ERROR)
 
 
-class DatabaseObjectResult(object):
+class DatabaseObjectResult:
     """
     Class of standard data result
     """
@@ -140,7 +140,7 @@ class DatabaseObjectException(Exception):
         Exception.__init__(self, msg)
 
 
-class ErrorMessages(object):
+class ErrorMessages:
     """
     Class of standar messages of the module
     """
