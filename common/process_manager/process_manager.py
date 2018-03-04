@@ -24,7 +24,7 @@ class ProcessManager:
         """
         Delete queue from the system
         :param queue_name: name of the queue
-        :param now: stop process pending or not
+        :param now: stop pending process or not
         :return: None or exception if queue not exists
         """
 

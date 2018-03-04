@@ -22,6 +22,9 @@ class ProcessQueue:
         # Process queue lock. It is used for allow new process
         self.locked = False
 
+        # Variable to indicate that queue must be erased
+        self.to_delete = False
+
         # Task for monitoring process list
         self.monitor = MonitorTask(self)
         self.monitor.setInterval(10)
@@ -94,15 +97,23 @@ class ProcessQueue:
     def unlock(self):
         self.locked = False
 
-    def delete(self, now: bool = False):
+    def delete(self, now: bool = False) -> None:
         """
-        Ordered shutdown of the queue
+        Correct shutdown of the queue
         :param now: stop pending process or not
         :return: None
         """
 
+        # Set queue for deleting
+        self.to_delete = True
+
+        # Do not allow new process to enter
         self.lock()
-        self.monitor.shutdown()
+
+        # If want to stop now, first finish running processes and then shutdown
+        # If not, MonitorTask still run but it will shutdown itself when there are not pending tasks
+        if now:
+            self.monitor.shutdown()
 
     def is_ready_for_delete(self) -> bool:
         """
